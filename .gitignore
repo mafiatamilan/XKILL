@@ -1,0 +1,16 @@
+node_modules/
+.next/
+dist/
+.env
+.env.local
+*.exe
+*.test
+*.out
+terraform.tfstate
+terraform.tfstate.backup
+.terraform/
+*.tfvars
+*.tfvars.json
+coverage/
+tmp/
+__debug_bin/
