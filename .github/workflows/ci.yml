@@ -1,0 +1,149 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      core-api: ${{ steps.filter.outputs.core-api }}
+      judge-service: ${{ steps.filter.outputs.judge-service }}
+      ai-gateway: ${{ steps.filter.outputs.ai-gateway }}
+      realtime: ${{ steps.filter.outputs.realtime }}
+      worker: ${{ steps.filter.outputs.worker }}
+      web: ${{ steps.filter.outputs.web }}
+      infra: ${{ steps.filter.outputs.infra }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            core-api:
+              - 'services/core-api/**'
+            judge-service:
+              - 'services/judge-service/**'
+            ai-gateway:
+              - 'services/ai-gateway/**'
+            realtime:
+              - 'services/realtime/**'
+            worker:
+              - 'services/worker/**'
+            web:
+              - 'apps/web/**'
+              - 'apps/design-system/**'
+            infra:
+              - 'infra/terraform/**'
+
+  go-lint:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.core-api == 'true' || needs.detect-changes.outputs.judge-service == 'true' || needs.detect-changes.outputs.ai-gateway == 'true' || needs.detect-changes.outputs.realtime == 'true' || needs.detect-changes.outputs.worker == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - run: go install honnef.co/go/tools/cmd/staticcheck@latest
+      - name: Lint all Go services
+        run: |
+          for dir in services/*/; do
+            (cd "$dir" && go vet ./... && staticcheck ./...)
+          done
+
+  go-test:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.core-api == 'true' || needs.detect-changes.outputs.judge-service == 'true' || needs.detect-changes.outputs.ai-gateway == 'true' || needs.detect-changes.outputs.realtime == 'true' || needs.detect-changes.outputs.worker == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - name: Test all Go services
+        run: |
+          for dir in services/*/; do
+            (cd "$dir" && go test ./... -v -count=1)
+          done
+
+  go-build:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.core-api == 'true' || needs.detect-changes.outputs.judge-service == 'true' || needs.detect-changes.outputs.ai-gateway == 'true' || needs.detect-changes.outputs.realtime == 'true' || needs.detect-changes.outputs.worker == 'true' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [core-api, judge-service, ai-gateway, realtime, worker]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - name: Build ${{ matrix.service }}
+        run: |
+          cd services/${{ matrix.service }}
+          go build ./cmd/server/
+
+  web-lint:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.web == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+        working-directory: apps/web
+      - run: npm run lint
+        working-directory: apps/web
+      - run: npm run typecheck
+        working-directory: apps/web
+
+  web-build:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.web == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+        working-directory: apps/web
+      - run: npm run build
+        working-directory: apps/web
+
+  terraform-plan:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.infra == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.6.0'
+      - name: Terraform Format
+        run: terraform fmt -check -recursive infra/terraform/
+      - name: Terraform Init (dev)
+        run: terraform init
+        working-directory: infra/terraform/envs/dev
+      - name: Terraform Plan (dev)
+        run: terraform plan -no-color -out=tfplan
+        working-directory: infra/terraform/envs/dev
+      - name: Post Plan to PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const plan = fs.readFileSync('infra/terraform/envs/dev/tfplan', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '## Terraform Plan (dev)\n\n```\n' + plan.substring(0, 60000) + '\n```'
+            });

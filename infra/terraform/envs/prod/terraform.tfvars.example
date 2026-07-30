@@ -1,0 +1,33 @@
+region     = "us-east-1"
+environment = "prod"
+
+vpc_cidr             = "10.2.0.0/16"
+azs                  = ["us-east-1a", "us-east-1b", "us-east-1c"]
+public_subnet_cidrs  = ["10.2.1.0/24", "10.2.2.0/24", "10.2.3.0/24"]
+private_subnet_cidrs = ["10.2.10.0/24", "10.2.11.0/24", "10.2.12.0/24"]
+single_nat_gateway   = false
+
+db_instance_class     = "db.r6g.large"
+db_name               = "xkill"
+db_username           = "xkill_admin"
+# db_password = "your-password-here"
+db_multi_az           = true
+
+redis_node_type            = "cache.r6g.large"
+redis_cluster_mode_enabled = true
+redis_num_shards           = 2
+redis_replicas_per_shard   = 1
+
+api_image          = "123456789012.dkr.ecr.us-east-1.amazonaws.com/xkill-api:prod"
+api_cpu            = 1024
+api_memory         = 2048
+api_desired_count  = 3
+
+judge_image          = "123456789012.dkr.ecr.us-east-1.amazonaws.com/xkill-judge:prod"
+judge_cpu            = 2048
+judge_memory         = 4096
+judge_desired_count  = 2
+
+# domain_name = "xkill.io"
+# github_org  = "your-org"
+# github_repo = "xkill"

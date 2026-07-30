@@ -1,0 +1,16 @@
+ALTER TABLE users
+    DROP COLUMN IF EXISTS name,
+    DROP COLUMN IF EXISTS phone,
+    DROP COLUMN IF EXISTS avatar_url,
+    DROP COLUMN IF EXISTS college_id,
+    DROP COLUMN IF EXISTS is_active,
+    DROP COLUMN IF EXISTS is_email_verified,
+    DROP COLUMN IF EXISTS is_2fa_enabled,
+    DROP COLUMN IF EXISTS totp_secret,
+    DROP COLUMN IF EXISTS backup_codes,
+    DROP COLUMN IF EXISTS password_reset_token,
+    DROP COLUMN IF EXISTS password_reset_expires_at,
+    DROP COLUMN IF EXISTS last_login_at,
+    DROP COLUMN IF EXISTS last_login_ip,
+    DROP COLUMN IF EXISTS metadata,
+    DROP COLUMN IF EXISTS updated_at;

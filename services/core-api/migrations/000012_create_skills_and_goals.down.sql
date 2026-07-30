@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS question_bank;
+DROP TABLE IF EXISTS career_goals;
+DROP TABLE IF EXISTS skills;
