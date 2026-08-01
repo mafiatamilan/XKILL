@@ -12,35 +12,39 @@ datasource db {
 // ---------------------------------------------------------------------------
 
 model User {
-  id                     String                  @id @default(cuid())
-  email                  String                  @unique
-  passwordHash           String
-  fullName               String
-  avatarUrl              String?
-  roleId                 String
-  role                   Role                    @relation(fields: [roleId], references: [id])
-  isActive               Boolean                 @default(true)
-  emailVerifiedAt        DateTime?
-  suspendedAt            DateTime?
-  suspendReason          String?
-  deletedAt              DateTime?
-  twoFactor              TwoFactorSecret?
-  sessions               Session[]
-  devices                Device[]
-  oauthAccounts          OAuthAccount[]
+  id                      String                   @id @default(cuid())
+  email                   String                   @unique
+  passwordHash            String
+  fullName                String
+  avatarUrl               String?
+  roleId                  String
+  role                    Role                     @relation(fields: [roleId], references: [id])
+  isActive                Boolean                  @default(true)
+  emailVerifiedAt         DateTime?
+  suspendedAt             DateTime?
+  suspendReason           String?
+  deletedAt               DateTime?
+  twoFactor               TwoFactorSecret?
+  sessions                Session[]
+  devices                 Device[]
+  oauthAccounts           OAuthAccount[]
   emailVerificationTokens EmailVerificationToken[]
-  passwordResetTokens    PasswordResetToken[]
-  auditLogs              AuditLog[]
-  studentProfile         StudentProfile?
-  skillProfiles          SkillProfile[]
-  careerGoals            CareerGoal[]
-  readinessScore         ReadinessScore?
-  notifications          Notification[]
-  calendarEvents         CalendarEvent[]
-  activityLogs           ActivityLog[]
-  settings               UserSettings?
-  createdAt              DateTime                @default(now())
-  updatedAt              DateTime                @updatedAt
+  passwordResetTokens     PasswordResetToken[]
+  auditLogs               AuditLog[]
+  studentProfile          StudentProfile?
+  skillProfiles           SkillProfile[]
+  careerGoals             CareerGoal[]
+  readinessScore          ReadinessScore?
+  notifications           Notification[]
+  calendarEvents          CalendarEvent[]
+  activityLogs            ActivityLog[]
+  settings                UserSettings?
+  facultySubjects         Subject[]                @relation("SubjectFaculty")
+  attendanceRecords       AttendanceRecord[]       @relation("StudentAttendance")
+  internalMarks           InternalMark[]           @relation("StudentInternalMarks")
+  assignmentSubmissions   AssignmentSubmission[]   @relation("StudentSubmissions")
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
 
   @@index([roleId])
   @@index([isActive])
@@ -92,17 +96,17 @@ model Session {
 }
 
 model Device {
-  id        String    @id @default(cuid())
-  userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name      String?
-  platform  String?
-  browser   String?
-  os        String?
-  pushToken String?
-  lastUsedAt DateTime @default(now())
-  sessions  Session[]
-  createdAt DateTime  @default(now())
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String?
+  platform   String?
+  browser    String?
+  os         String?
+  pushToken  String?
+  lastUsedAt DateTime  @default(now())
+  sessions   Session[]
+  createdAt  DateTime  @default(now())
 
   @@index([userId])
 }
@@ -163,9 +167,9 @@ model TwoFactorSecret {
 // ---------------------------------------------------------------------------
 
 model StudentProfile {
-  id                     String        @id @default(cuid())
-  userId                 String        @unique
-  user                   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                     String    @id @default(cuid())
+  userId                 String    @unique
+  user                   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   headline               String?
   bio                    String?
   phone                  String?
@@ -184,9 +188,9 @@ model StudentProfile {
   department             String?
   currentSemester        Int?
   expectedGraduationYear Int?
-  isProfileVisible       Boolean         @default(true)
-  createdAt              DateTime        @default(now())
-  updatedAt              DateTime        @updatedAt
+  isProfileVisible       Boolean   @default(true)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 
   @@index([collegeName])
   @@index([department])
@@ -194,37 +198,37 @@ model StudentProfile {
 }
 
 model SkillProfile {
-  id               String   @id @default(cuid())
-  userId           String
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name             String
-  category         String   @default("other")
-  proficiencyLevel String   @default("intermediate") // beginner | intermediate | advanced | expert
-  yearsOfExperience Float?  @default(0)
-  isPrimary        Boolean  @default(false)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name              String
+  category          String   @default("other")
+  proficiencyLevel  String   @default("intermediate") // beginner | intermediate | advanced | expert
+  yearsOfExperience Float?   @default(0)
+  isPrimary         Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
+  @@unique([userId, name])
   @@index([userId])
   @@index([category])
-  @@unique([userId, name])
 }
 
 model CareerGoal {
-  id               String   @id @default(cuid())
-  userId           String
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title            String
-  targetRole       String?
-  targetCompanies  String[]
-  industries       String[]
+  id                 String    @id @default(cuid())
+  userId             String
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title              String
+  targetRole         String?
+  targetCompanies    String[]
+  industries         String[]
   preferredLocations String[]
-  targetCtcLakhs   Int?
-  targetDate       DateTime?
-  status           String   @default("active") // active | achieved | archived
-  notes            String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  targetCtcLakhs     Int?
+  targetDate         DateTime?
+  status             String    @default("active") // active | achieved | archived
+  notes              String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   @@index([userId])
   @@index([status])
@@ -232,14 +236,14 @@ model CareerGoal {
 }
 
 model ReadinessScore {
-  id               String   @id @default(cuid())
-  userId           String   @unique
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  overall          Int
-  components       Json
-  calculatedAt     DateTime @default(now())
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  overall      Int
+  components   Json
+  calculatedAt DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@index([overall])
   @@index([calculatedAt])
@@ -287,7 +291,7 @@ model ActivityLog {
   id          String   @id @default(cuid())
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type        String   // profile | skill | career_goal | calendar | readiness | notification | system
+  type        String // profile | skill | career_goal | calendar | readiness | notification | system
   title       String
   description String?
   metadata    Json?
@@ -314,13 +318,215 @@ model UserSettings {
 }
 
 // ---------------------------------------------------------------------------
+// 5.3 — College Academic Module
+// ---------------------------------------------------------------------------
+
+model Department {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  code        String    @unique
+  description String?
+  subjects    Subject[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([name])
+}
+
+model Semester {
+  id        String    @id @default(cuid())
+  number    Int       @unique
+  name      String
+  scheme    String? // e.g. "2019" old scheme, "2023" new scheme — credit weight origin
+  subjects  Subject[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([number])
+}
+
+model Subject {
+  id                String             @id @default(cuid())
+  code              String             @unique
+  name              String
+  description       String?
+  credit            Int                @default(4)
+  departmentId      String
+  department        Department         @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  semesterId        String
+  semester          Semester           @relation(fields: [semesterId], references: [id], onDelete: Cascade)
+  facultyId         String?
+  faculty           User?              @relation("SubjectFaculty", fields: [facultyId], references: [id], onDelete: SetNull)
+  materials         StudyMaterial[]
+  exams             Exam[]
+  assignments       Assignment[]
+  attendanceRecords AttendanceRecord[]
+  timetableSlots    TimetableSlot[]
+  internalMarks     InternalMark[]
+  questionBank      QuestionBankItem[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@index([departmentId])
+  @@index([semesterId])
+  @@index([facultyId])
+  @@index([credit])
+}
+
+model StudyMaterial {
+  id         String   @id @default(cuid())
+  subjectId  String
+  subject    Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  title      String
+  type       String   @default("note") // note | slide | video | link | reference
+  url        String
+  uploadedBy String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([subjectId])
+}
+
+model Exam {
+  id          String         @id @default(cuid())
+  subjectId   String
+  subject     Subject        @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  title       String
+  examType    String         @default("internal") // internal | midterm | endterm | practical
+  maxMarks    Float          @default(100)
+  scheduledAt DateTime?
+  marks       InternalMark[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([subjectId])
+}
+
+model Assignment {
+  id          String                 @id @default(cuid())
+  subjectId   String
+  subject     Subject                @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  maxScore    Float?
+  dueAt       DateTime?
+  submissions AssignmentSubmission[]
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+
+  @@index([subjectId])
+}
+
+model AssignmentSubmission {
+  id            String     @id @default(cuid())
+  assignmentId  String
+  assignment    Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  studentId     String
+  student       User       @relation("StudentSubmissions", fields: [studentId], references: [id], onDelete: Cascade)
+  content       String?
+  attachmentUrl String?
+  submittedAt   DateTime   @default(now())
+  status        String     @default("submitted") // submitted | graded
+  score         Float?
+  feedback      String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@unique([assignmentId, studentId])
+  @@index([studentId])
+}
+
+model AttendanceRecord {
+  id          String   @id @default(cuid())
+  subjectId   String
+  subject     Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  studentId   String
+  student     User     @relation("StudentAttendance", fields: [studentId], references: [id], onDelete: Cascade)
+  sessionDate DateTime
+  status      String   @default("present") // present | absent | late | excused
+  markedBy    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([subjectId, studentId, sessionDate])
+  @@index([studentId])
+  @@index([subjectId])
+}
+
+model TimetableSlot {
+  id        String   @id @default(cuid())
+  subjectId String
+  subject   Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  dayOfWeek Int // 0=Mon .. 6=Sun
+  startTime String
+  endTime   String
+  room      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([subjectId])
+  @@index([dayOfWeek])
+}
+
+model InternalMark {
+  id            String   @id @default(cuid())
+  subjectId     String
+  subject       Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  examId        String?
+  exam          Exam?    @relation(fields: [examId], references: [id], onDelete: Cascade)
+  studentId     String
+  student       User     @relation("StudentInternalMarks", fields: [studentId], references: [id], onDelete: Cascade)
+  marksObtained Float
+  maxMarks      Float
+  attempt       Int      @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([subjectId, studentId, examId])
+  @@index([studentId])
+  @@index([subjectId])
+}
+
+model AcademicCalendarEvent {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  eventType   String    @default("academic") // academic | exam | holiday | event | deadline
+  startAt     DateTime
+  endAt       DateTime?
+  allDay      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([startAt])
+  @@index([eventType])
+}
+
+model QuestionBankItem {
+  id            String   @id @default(cuid())
+  subjectId     String
+  subject       Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  question      String
+  options       Json?
+  correctAnswer String?
+  difficulty    String   @default("medium") // easy | medium | hard
+  marks         Float?
+  createdBy     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([subjectId])
+  @@index([difficulty])
+}
+
+// ---------------------------------------------------------------------------
 // Cross-cutting
 // ---------------------------------------------------------------------------
 
 model AuditLog {
-  id         String    @id @default(cuid())
+  id         String   @id @default(cuid())
   userId     String?
-  user       User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   action     String
   entityType String
   entityId   String?
@@ -328,7 +534,7 @@ model AuditLog {
   after      Json?
   metadata   Json?
   ip         String?
-  createdAt  DateTime  @default(now())
+  createdAt  DateTime @default(now())
 
   @@index([userId])
   @@index([entityType, entityId])

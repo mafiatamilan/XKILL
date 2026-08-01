@@ -8,7 +8,7 @@ to the next one.
 
 - [x] 5.1 Auth & Identity
 - [x] 5.2 Student Platform
-- [ ] 5.3 College Academic Module
+- [x] 5.3 College Academic Module
 - [ ] 5.4 Placement Preparation
 - [ ] 5.5 / 5.20 DSA Platform (core + extended)
 - [ ] 5.6 AI Interview Engine
@@ -51,7 +51,8 @@ to the next one.
 |---|---|---|---|
 | 5.1 Auth & Identity | 187 | 64 | 95.46 / 90.1 / 85.48 / 95.16 |
 | 5.2 Student Platform | 99 | 24 | — (module-level: students 100% funcs, repo 100%, readiness 100%) |
-| **Full suite (cumulative)** | **286** | **88** | **96.67 / 85.68 / 91.02 / 96.53** |
+| 5.3 College Academic Module | 183 | 33 | — (module-level 96.83 / 81.93 / 98.23 / 96.66; faculty service 100%, repo 97.7 / 82.5 / 97.18 / 97.64, calculators 100% funcs) |
+| **Full suite (cumulative)** | **469** | **121** | **96.87 / 84.75 / 94.35 / 96.71** |
 
 Coverage gates (global thresholds in package.json): statements ≥85, branches ≥80, functions ≥85, lines ≥85.
 
@@ -66,3 +67,6 @@ consistent with earlier ones.
 | 2026-08-01 | Local dev ports already in use? | Yes — local Postgres on 5432 and Redis on 6379 were taken. `.env` uses 5433/6380 for the XKILL containers; `.env.example` keeps 5432/6379 as defaults. |
 | 2026-08-01 | 5.2 readiness-score/recalculate is a POST that mutates score state — should it count toward activity engagement in the score itself? | No — recalculation logs a `readiness` activity entry, but `countRecentActivity` excludes the `readiness` type so a recalc never inflates its own input (keeps consecutive recalcs deterministic). |
 | 2026-08-01 | 5.2 `GET /readiness-score` before any recalc — return value? | Returns 200 with an empty body (Nest serializes `null` returns as empty 200). The dashboard exposes `readinessScore: null` explicitly. Client treats the empty 200 / absent `overall` as "no score yet". |
+| 2026-08-02 | 5.3 Who may create/assign faculty to subjects — faculty or admin? | Both. Faculty `POST /faculty/subjects` self-assigns; admin `POST /admin/courses` can optionally pass `facultyId`. A subject is always owned by exactly one faculty member, and every faculty write path (materials/attendance/assignments/exams/marks/question-bank) re-checks ownership → 403 `SUBJECT_NOT_ASSIGNED` otherwise. |
+| 2026-08-02 | 5.3 `enterBulkMarks` rollback semantics in e2e | Transactional: a mid-batch failure (invalid student, `marksObtained > maxMarks`) throws inside `$transaction`, so zero rows persist — e2e asserts the mark count is unchanged after a forced 2-row failure. |
+| 2026-08-02 | 5.3 Student `@Resource('academics-*')` permissions | The student seed role now grants `read:academics-*` (plus `create:academics-assignments` for submission); without these the RolesGuard 403s every `/academics/*` request. Discovered via the e2e suite. |
