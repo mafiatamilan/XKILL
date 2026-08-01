@@ -19,6 +19,7 @@ import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { AdminModule } from './admin/admin.module';
+import { StudentsModule } from './students/students.module';
 import { HealthModule } from './health/health.module';
 
 @Module({
@@ -44,6 +45,7 @@ import { HealthModule } from './health/health.module';
     AuthModule,
     UsersModule,
     AdminModule,
+    StudentsModule,
     HealthModule,
   ],
   providers: [

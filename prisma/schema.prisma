@@ -31,6 +31,14 @@ model User {
   emailVerificationTokens EmailVerificationToken[]
   passwordResetTokens    PasswordResetToken[]
   auditLogs              AuditLog[]
+  studentProfile         StudentProfile?
+  skillProfiles          SkillProfile[]
+  careerGoals            CareerGoal[]
+  readinessScore         ReadinessScore?
+  notifications          Notification[]
+  calendarEvents         CalendarEvent[]
+  activityLogs           ActivityLog[]
+  settings               UserSettings?
   createdAt              DateTime                @default(now())
   updatedAt              DateTime                @updatedAt
 
@@ -148,6 +156,161 @@ model TwoFactorSecret {
   disabledAt DateTime?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// 5.2 — Student Platform
+// ---------------------------------------------------------------------------
+
+model StudentProfile {
+  id                     String        @id @default(cuid())
+  userId                 String        @unique
+  user                   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  headline               String?
+  bio                    String?
+  phone                  String?
+  dateOfBirth            DateTime?
+  gender                 String?
+  githubUrl              String?
+  linkedinUrl            String?
+  portfolioUrl           String?
+  leetcodeUrl            String?
+  codeforcesUrl          String?
+  resumeUrl              String?
+  city                   String?
+  state                  String?
+  country                String?
+  collegeName            String?
+  department             String?
+  currentSemester        Int?
+  expectedGraduationYear Int?
+  isProfileVisible       Boolean         @default(true)
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+
+  @@index([collegeName])
+  @@index([department])
+  @@index([expectedGraduationYear])
+}
+
+model SkillProfile {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name             String
+  category         String   @default("other")
+  proficiencyLevel String   @default("intermediate") // beginner | intermediate | advanced | expert
+  yearsOfExperience Float?  @default(0)
+  isPrimary        Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([userId])
+  @@index([category])
+  @@unique([userId, name])
+}
+
+model CareerGoal {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title            String
+  targetRole       String?
+  targetCompanies  String[]
+  industries       String[]
+  preferredLocations String[]
+  targetCtcLakhs   Int?
+  targetDate       DateTime?
+  status           String   @default("active") // active | achieved | archived
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([targetRole])
+}
+
+model ReadinessScore {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  overall          Int
+  components       Json
+  calculatedAt     DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([overall])
+  @@index([calculatedAt])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String    @default("system") // system | announcement | academic | placement | job | mentor | general
+  title     String
+  message   String
+  metadata  Json?
+  isRead    Boolean   @default(false)
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([userId, isRead])
+  @@index([createdAt])
+}
+
+model CalendarEvent {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  eventType   String    @default("personal") // interview | study | exam | placement | personal | other
+  startAt     DateTime
+  endAt       DateTime?
+  location    String?
+  isAllDay    Boolean   @default(false)
+  color       String?
+  reminderAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([userId, startAt])
+  @@index([eventType])
+}
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String   // profile | skill | career_goal | calendar | readiness | notification | system
+  title       String
+  description String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, createdAt])
+  @@index([type])
+}
+
+model UserSettings {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailNotifications Boolean  @default(true)
+  pushNotifications  Boolean  @default(true)
+  smsNotifications   Boolean  @default(false)
+  weeklyDigest       Boolean  @default(true)
+  language           String   @default("en")
+  theme              String   @default("light") // light | dark | system
+  profileVisibility  String   @default("public") // public | recruiters_only | private
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 }
 
 // ---------------------------------------------------------------------------
