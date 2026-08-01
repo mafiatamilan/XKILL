@@ -1,16 +1,31 @@
+# Dependencies
 node_modules/
-.next/
+
+# Build output
 dist/
+build/
+
+# Generated files
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env files
 .env
 .env.local
-*.exe
-*.test
-*.out
-terraform.tfstate
-terraform.tfstate.backup
-.terraform/
-*.tfvars
-*.tfvars.json
-coverage/
-tmp/
-__debug_bin/
+.env.*.local
+
+# VSCode
+.vscode/
+
+# Test artifacts
+test/global-setup-result.json

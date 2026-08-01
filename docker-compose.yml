@@ -1,0 +1,83 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: xkill-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: xkill
+      POSTGRES_PASSWORD: xkill
+      POSTGRES_DB: xkill
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U xkill -d xkill"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: xkill-redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: xkill-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://xkill:xkill@postgres:5432/xkill?schema=public
+      REDIS_URL: redis://redis:6379
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-change-me-access-secret-min-32-chars}
+      JWT_ACCESS_TTL_SECONDS: 900
+      JWT_REFRESH_TTL_DAYS: 30
+      JWT_ISSUER: xkill-backend
+      JWT_AUDIENCE: xkill-app
+      DEFAULT_ROLE: student
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      WEB_APP_URL: ${WEB_APP_URL:-http://localhost:3000}
+      TWO_FACTOR_ISSUER: XKILL
+      OAUTH_GOOGLE_CLIENT_ID: ${OAUTH_GOOGLE_CLIENT_ID:-}
+      OAUTH_GOOGLE_CLIENT_SECRET: ${OAUTH_GOOGLE_CLIENT_SECRET:-}
+      OAUTH_GITHUB_CLIENT_ID: ${OAUTH_GITHUB_CLIENT_ID:-}
+      OAUTH_GITHUB_CLIENT_SECRET: ${OAUTH_GITHUB_CLIENT_SECRET:-}
+      OAUTH_LINKEDIN_CLIENT_ID: ${OAUTH_LINKEDIN_CLIENT_ID:-}
+      OAUTH_LINKEDIN_CLIENT_SECRET: ${OAUTH_LINKEDIN_CLIENT_SECRET:-}
+      MAIL_DRIVER: ${MAIL_DRIVER:-console}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-noreply@xkill.app}
+      JUDGE0_BASE_URL: ${JUDGE0_BASE_URL:-}
+      JUDGE0_AUTH_TOKEN: ${JUDGE0_AUTH_TOKEN:-}
+      RATE_LIMIT_TTL_MS: 60000
+      RATE_LIMIT_LIMIT: 120
+      AUTH_RATE_LIMIT_LIMIT: 10
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@xkill.app}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@1234}
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:
+  redisdata:
