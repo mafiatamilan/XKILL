@@ -1,4 +1,0 @@
-DROP TABLE IF EXISTS offers CASCADE;
-DROP TABLE IF EXISTS placement_applications CASCADE;
-DROP TABLE IF EXISTS drive_eligibility CASCADE;
-DROP TABLE IF EXISTS placement_drives CASCADE;

@@ -1,9 +1,0 @@
-go 1.22
-
-use (
-	./services/core-api
-	./services/judge-service
-	./services/ai-gateway
-	./services/realtime
-	./services/worker
-)

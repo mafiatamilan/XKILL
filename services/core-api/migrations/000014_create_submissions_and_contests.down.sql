@@ -1,9 +1,0 @@
-DROP TABLE IF EXISTS cheat_flags;
-DROP TABLE IF EXISTS rating_history;
-DROP TABLE IF EXISTS contest_participants;
-DROP TABLE IF EXISTS contest_problems;
-DROP TABLE IF EXISTS contests;
-DROP TABLE IF EXISTS playlist_problems;
-DROP TABLE IF EXISTS playlists;
-DROP TABLE IF EXISTS submissions_verbose;
-DROP TABLE IF EXISTS submissions;

@@ -1,5 +1,0 @@
-DROP TABLE IF EXISTS career_resources CASCADE;
-DROP TABLE IF EXISTS career_paths CASCADE;
-DROP TABLE IF EXISTS mock_interviews CASCADE;
-DROP TABLE IF EXISTS interview_experiences CASCADE;
-DROP TABLE IF EXISTS interview_questions CASCADE;
