@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { config } from 'dotenv';
 import { seedRolesAndPermissions } from '../src/seed/base-seed';
+import { seedDsaCatalog } from '../src/seed/dsa-catalog.seed';
 
 config();
 
@@ -42,6 +43,8 @@ async function main(): Promise<void> {
       emailVerifiedAt: new Date(),
     },
   });
+
+  await seedDsaCatalog(prisma);
 
   console.log('Seed complete. Admin:', adminEmail, '| Demo student:', studentEmail);
 }

@@ -10,8 +10,8 @@ to the next one.
 - [x] 5.2 Student Platform
 - [x] 5.3 College Academic Module
 - [x] 5.4 Placement Preparation
-- [x] 5.5 / 5.20 DSA Platform — 5.5a core solve loop (browse/filter problems, run/submit, Judge0 verdicts via BullMQ queue + Socket.io `submission.verdict` event, editorial, progressive hints, submission history) — 5.5b/c (playlists, contests, ratings) still open
-- [ ] 5.5b DSA Platform — playlists, sheets, progress tracking, analytics
+- [x] 5.5 / 5.20 DSA Platform — 5.5a core solve loop (browse/filter problems, run/submit, Judge0 verdicts via BullMQ queue + Socket.io `submission.verdict` event, editorial, progressive hints, submission history) + 5.5b (playlists, sheets, progress, analytics, visibility, discussion) — 5.5c (contests, ratings) still open
+- [x] 5.5b DSA Platform — playlists (private/shared, 404-no-existence-leak), curated sheets (Blind 75, Grind 169, NeetCode 150, Google, Amazon) seeded from a real problem catalog, live progress/analytics computed from Submission rows (accuracy, heatmap, weak/strong topics, runtime, rating-trend placeholder), recruiter visibility settings behind the pure `filterVisibleFields` predicate, per-problem discussion with idempotent upvotes
 - [ ] 5.6 AI Interview Engine
 - [ ] 5.7 AI Career Coach
 - [ ] 5.8 Resume Builder & ATS
@@ -55,7 +55,8 @@ to the next one.
 | 5.3 College Academic Module | 183 | 33 | — (module-level 96.83 / 81.93 / 98.23 / 96.66; faculty service 100%, repo 97.7 / 82.5 / 97.18 / 97.64, calculators 100% funcs) |
 | 5.4 Placement Preparation (incl. shared AiService) | 61 | 13 | — (full-suite stmts/branch/funcs/lines 96.24 / 84.41 / 92.8 / 96.11) |
 | 5.5a DSA Platform core (incl. JudgeService, BullMQ worker, Socket.io gateway) | 49 | 18 | — (dsa 95 / 72.09 / 88.7 / 94.55; judge 91.89 / 71.05 / 100 / 90.9) |
-| **Full suite (cumulative)** | **590** | **152** | **94.91 / 82.49 / 91.51 / 94.74** |
+| 5.5b DSA Platform organize & track (playlists, sheets, progress, analytics, visibility, discussion) | 74 | 18 | — (calculators 98.46 / 90.54 / 90.9 / 98.9; track service + controller + repository fully unit-covered) |
+| **Full suite (cumulative)** | **664** | **170** | **95.23 / 83.18 / 91.73 / 95.09** |
 
 Coverage gates (global thresholds in package.json): statements ≥85, branches ≥80, functions ≥85, lines ≥85.
 
@@ -84,3 +85,9 @@ consistent with earlier ones.
 | 2026-08-02 | 5.5a Solved-state under concurrent submissions | `SolvedProblem` unique `[userId, problemId]` upserted only on Accepted — concurrent double-submission is winner-take-all and never double-counts (e2e asserts exactly 1 row). |
 | 2026-08-02 | 5.5a Socket.io adapter client lifecycle | ioredis v5 auto-connects, so `connectToRedis` must await `ready` (not call `.connect()`), and `RedisIoAdapter.close()` must quit pub/sub after `super.close()` — otherwise the leaked clients hang the Jest e2e process ("did not exit"). |
 | 2026-08-02 | 5.4 Roadmap lazy generation + persistence | `GET /placement/roadmap` generates a personalized 10-week × 7-task roadmap on first access (persisted), reused afterwards; week `tasks` are returned via the seed permission `update:placement-tasks` for completion. |
+| 2026-08-02 | 5.5b Discussion upvote tracking — count field vs join rows | Both: a denormalized `upvoteCount` on `Discussion` plus a `DiscussionVote` join table (`@@unique([discussionId, userId])`) so upvotes are idempotent (one vote per user, never double-counted) and list queries still sort/filter by count cheaply. Upvote is POST-only (no downvote/un-vote yet). |
+| 2026-08-02 | 5.5b Private playlists — 404 or 403 for another user's GET? | 404 (`PLAYLIST_NOT_FOUND`) — same code as a missing playlist, so a private list's existence is never leaked. Shared (`isPublic`) playlists are readable by any student. Update/delete/add/remove are owner-only and also 404 for non-owners. |
+| 2026-08-02 | 5.5b `analytics/me` rating trend before contests ship | Explicit placeholder, not an empty array: `{ available: false, message: '…requires contest history which ships in module 5.5c' }`. No `CodingRating` table yet — contest/rating data lands with 5.5c. |
+| 2026-08-02 | 5.5b Progress/analytics caching? | None by design. `progress/me`, `analytics/me`, per-sheet progress and per-problem completion are all computed live from `SolvedProblem`/`Submission` rows on every request via the pure calculators (`progress.calculator.ts`, `analytics.calculator.ts`). Sheet progress intersects the sheet's problems with the user's live `SolvedProblem` ids. |
+| 2026-08-02 | 5.5b Curated sheets seed data | New `seedDsaCatalog` seeds a 12-problem real catalog (Two Sum, Valid Parentheses, …) with test cases and upserts 5 curated sheets (Blind 75, Grind 169, NeetCode 150, Google, Amazon) mapped by slug — no empty/fake sheets (e2e asserts a sheet with real problems yields live progress). `prisma/seed.ts` is idempotent. |
+| 2026-08-02 | 5.5b Profile visibility `filterVisibleFields` reuse | Implemented as an isolated, unit-tested pure function (`profile-visibility.ts`) over a `DsaCandidateProfile` + `DsaVisibilitySettings`. 5.5b only persists/toggles settings (`GET/PATCH /dsa/profile/visibility`, `showEmail` defaults off); the Recruiter Portal (5.17) will call the same predicate when rendering candidate cards. |

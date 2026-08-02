@@ -50,6 +50,10 @@ model User {
   dsaSubmissions          Submission[]
   solvedProblems          SolvedProblem[]
   hintUnlocks             HintUnlock[]
+  playlists               Playlist[]
+  discussionPosts         Discussion[]           @relation("DiscussionAuthor")
+  discussionVotes         DiscussionVote[]
+  dsaProfileVisibility    DsaProfileVisibility?
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
 
@@ -670,12 +674,15 @@ model Problem {
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
-  testCases   TestCase[]
-  editorial   Editorial?
-  hints       Hint[]
-  submissions Submission[]
-  hintUnlocks HintUnlock[]
-  solvedBy    SolvedProblem[]
+  testCases       TestCase[]
+  editorial       Editorial?
+  hints           Hint[]
+  submissions     Submission[]
+  hintUnlocks     HintUnlock[]
+  solvedBy        SolvedProblem[]
+  playlistEntries PlaylistProblem[]
+  sheetEntries    SheetProblem[]
+  discussions     Discussion[]
 
   @@index([difficulty])
   @@index([isActive])
@@ -778,4 +785,108 @@ model HintUnlock {
   @@unique([userId, problemId])
   @@index([userId])
   @@index([problemId])
+}
+
+// ---------------------------------------------------------------------------
+// DSA Platform — organize & track (5.5b)
+// ---------------------------------------------------------------------------
+
+model Playlist {
+  id          String             @id @default(cuid())
+  userId      String
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  isPublic    Boolean            @default(false) // shared lists are public; private lists 404 for others
+  problems    PlaylistProblem[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([userId])
+  @@index([isPublic])
+}
+
+model PlaylistProblem {
+  id         String   @id @default(cuid())
+  playlistId String
+  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  problemId  String
+  problem    Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@unique([playlistId, problemId])
+  @@index([problemId])
+}
+
+model Sheet {
+  id          String         @id @default(cuid())
+  slug        String         @unique
+  name        String
+  description String?
+  isActive    Boolean        @default(true)
+  problems    SheetProblem[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([isActive])
+}
+
+model SheetProblem {
+  id        String  @id @default(cuid())
+  sheetId   String
+  sheet     Sheet   @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  problemId String
+  problem   Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  order     Int     @default(0)
+  createdAt DateTime @default(now())
+
+  @@unique([sheetId, problemId])
+  @@index([problemId])
+}
+
+model Discussion {
+  id          String           @id @default(cuid())
+  problemId   String
+  problem     Problem          @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  authorId    String
+  author      User             @relation("DiscussionAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  title       String
+  body        String           @db.Text
+  upvoteCount Int              @default(0)
+  votes       DiscussionVote[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([problemId])
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+model DiscussionVote {
+  id           String     @id @default(cuid())
+  discussionId String
+  discussion   Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@unique([discussionId, userId])
+  @@index([userId])
+}
+
+model DsaProfileVisibility {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  showFullName    Boolean  @default(true)
+  showEmail       Boolean  @default(false)
+  showCollege     Boolean  @default(true)
+  showSkills      Boolean  @default(true)
+  showSolvedCount Boolean  @default(true)
+  showTopics      Boolean  @default(true)
+  showStreak      Boolean  @default(true)
+  showRating      Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }

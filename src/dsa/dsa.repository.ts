@@ -204,6 +204,201 @@ export class DsaRepository {
     });
   }
 
+  // ---- Playlists ----
+
+  countPlaylistsByUser(userId: string): Promise<number> {
+    return this.prisma.playlist.count({ where: { userId } });
+  }
+
+  findPlaylistsByUser(userId: string, page: number, limit: number) {
+    return this.prisma.playlist.findMany({
+      where: { userId },
+      include: { problems: { select: { problemId: true } } },
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+  }
+
+  findPlaylistById(id: string) {
+    return this.prisma.playlist.findUnique({
+      where: { id },
+      include: {
+        problems: {
+          orderBy: { order: 'asc' },
+          include: {
+            problem: { select: { id: true, slug: true, title: true, difficulty: true } },
+          },
+        },
+      },
+    });
+  }
+
+  createPlaylist(
+    userId: string,
+    data: { title: string; description?: string; isPublic?: boolean },
+  ) {
+    return this.prisma.playlist.create({ data: { userId, ...data } });
+  }
+
+  updatePlaylist(id: string, data: { title?: string; description?: string; isPublic?: boolean }) {
+    return this.prisma.playlist.update({ where: { id }, data });
+  }
+
+  deletePlaylist(id: string) {
+    return this.prisma.playlist.delete({ where: { id } });
+  }
+
+  async addPlaylistProblem(playlistId: string, problemId: string) {
+    const count = await this.prisma.playlistProblem.count({ where: { playlistId } });
+    return this.prisma.playlistProblem.upsert({
+      where: { playlistId_problemId: { playlistId, problemId } },
+      update: {},
+      create: { playlistId, problemId, order: count + 1 },
+    });
+  }
+
+  removePlaylistProblem(playlistId: string, problemId: string) {
+    return this.prisma.playlistProblem.deleteMany({
+      where: { playlistId, problemId },
+    });
+  }
+
+  // ---- Sheets ----
+
+  findActiveSheets() {
+    return this.prisma.sheet.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: 'asc' },
+      include: { problems: { orderBy: { order: 'asc' }, select: { problemId: true } } },
+    });
+  }
+
+  findSheetById(id: string) {
+    return this.prisma.sheet.findUnique({
+      where: { id },
+      include: {
+        problems: {
+          orderBy: { order: 'asc' },
+          include: {
+            problem: {
+              select: {
+                id: true,
+                slug: true,
+                title: true,
+                difficulty: true,
+                topics: true,
+                companies: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  // ---- Live solved state (progress/analytics are computed, never cached) ----
+
+  findSolvedProblems(userId: string) {
+    return this.prisma.solvedProblem.findMany({
+      where: { userId },
+      include: {
+        problem: { select: { difficulty: true, topics: true, companies: true } },
+      },
+    });
+  }
+
+  findSolvedProblemIds(userId: string): Promise<string[]> {
+    return this.prisma.solvedProblem
+      .findMany({ where: { userId }, select: { problemId: true } })
+      .then((rows) => rows.map((row) => row.problemId));
+  }
+
+  findSubmissionsForAnalytics(userId: string) {
+    return this.prisma.submission.findMany({
+      where: { userId },
+      select: {
+        verdict: true,
+        timeMs: true,
+        problemId: true,
+        submittedAt: true,
+        problem: { select: { topics: true } },
+      },
+    });
+  }
+
+  // ---- Recruiter-visibility settings ----
+
+  findVisibility(userId: string) {
+    return this.prisma.dsaProfileVisibility.findUnique({ where: { userId } });
+  }
+
+  upsertVisibility(
+    userId: string,
+    data: Partial<{
+      showFullName: boolean;
+      showEmail: boolean;
+      showCollege: boolean;
+      showSkills: boolean;
+      showSolvedCount: boolean;
+      showTopics: boolean;
+      showStreak: boolean;
+      showRating: boolean;
+    }>,
+  ) {
+    return this.prisma.dsaProfileVisibility.upsert({
+      where: { userId },
+      update: data,
+      create: { userId, ...data },
+    });
+  }
+
+  // ---- Discussion ----
+
+  createDiscussion(data: { problemId: string; authorId: string; title: string; body: string }) {
+    return this.prisma.discussion.create({ data });
+  }
+
+  findDiscussions(problemId: string, userId: string, page: number, limit: number) {
+    return this.prisma.discussion.findMany({
+      where: { problemId },
+      include: {
+        author: { select: { id: true, fullName: true } },
+        votes: { where: { userId }, select: { id: true } },
+      },
+      orderBy: [{ upvoteCount: 'desc' }, { createdAt: 'desc' }],
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+  }
+
+  countDiscussions(problemId: string): Promise<number> {
+    return this.prisma.discussion.count({ where: { problemId } });
+  }
+
+  findDiscussionById(id: string) {
+    return this.prisma.discussion.findUnique({ where: { id } });
+  }
+
+  /** Idempotent upvote: creates a vote row and increments the counter once. */
+  async upvoteDiscussion(discussionId: string, userId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const existing = await tx.discussionVote.findUnique({
+        where: { discussionId_userId: { discussionId, userId } },
+      });
+      if (existing) {
+        const discussion = await tx.discussion.findUnique({ where: { id: discussionId } });
+        return { created: false, discussion };
+      }
+      await tx.discussionVote.create({ data: { discussionId, userId } });
+      const discussion = await tx.discussion.update({
+        where: { id: discussionId },
+        data: { upvoteCount: { increment: 1 } },
+      });
+      return { created: true, discussion };
+    });
+  }
+
   private problemWhere(filters: ProblemFilters): Prisma.ProblemWhereInput {
     const where: Prisma.ProblemWhereInput = { isActive: true };
     if (filters.difficulty) where.difficulty = filters.difficulty;

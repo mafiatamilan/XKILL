@@ -4,7 +4,9 @@ import { AppConfigService } from '../config/app-config.service';
 import { JudgeModule } from '../judge/judge.module';
 import { AuditModule } from '../audit/audit.module';
 import { DsaController } from './dsa.controller';
+import { DsaTrackController } from './dsa-track.controller';
 import { DsaService } from './dsa.service';
+import { DsaTrackService } from './dsa-track.service';
 import { DsaRepository } from './dsa.repository';
 import { DsaSubmissionsProcessor } from './dsa-submissions.processor';
 import { DsaGateway } from './dsa.gateway';
@@ -22,8 +24,8 @@ import { SUBMISSION_QUEUE } from './submission.queue';
     JudgeModule,
     AuditModule,
   ],
-  controllers: [DsaController],
-  providers: [DsaService, DsaRepository, DsaSubmissionsProcessor, DsaGateway],
+  controllers: [DsaController, DsaTrackController],
+  providers: [DsaService, DsaTrackService, DsaRepository, DsaSubmissionsProcessor, DsaGateway],
   exports: [DsaService],
 })
 export class DsaModule {}
