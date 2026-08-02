@@ -59,6 +59,7 @@ model User {
   codingRating            CodingRating?            @relation("CodingRatingUser")
   ratingHistory           CodingRatingHistory[]    @relation("CodingRatingHistoryUser")
   antiCheatEvents         AntiCheatEvent[]         @relation("AntiCheatUser")
+  interviewSessions       InterviewSession[]
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
 
@@ -679,16 +680,17 @@ model Problem {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  testCases       TestCase[]
-  editorial       Editorial?
-  hints           Hint[]
-  submissions     Submission[]
-  hintUnlocks     HintUnlock[]
-  solvedBy        SolvedProblem[]
-  playlistEntries PlaylistProblem[]
-  sheetEntries    SheetProblem[]
-  discussions     Discussion[]
-  contestEntries  ContestProblem[]
+  testCases         TestCase[]
+  editorial         Editorial?
+  hints             Hint[]
+  submissions       Submission[]
+  hintUnlocks       HintUnlock[]
+  solvedBy          SolvedProblem[]
+  playlistEntries   PlaylistProblem[]
+  sheetEntries      SheetProblem[]
+  discussions       Discussion[]
+  contestEntries    ContestProblem[]
+  interviewSessions InterviewSession[]
 
   @@index([difficulty])
   @@index([isActive])
@@ -1020,4 +1022,80 @@ model AntiCheatEvent {
 
   @@index([sourceType, sourceId])
   @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// 5.6 — AI Interview Engine
+// ---------------------------------------------------------------------------
+
+model InterviewSession {
+  id        String              @id @default(cuid())
+  userId    String
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String // hr | technical | dsa | system-design
+  mode      String              @default("text") // text now; voice/video explicitly not available
+  status    String              @default("created") // created | in_progress | ended
+  problemId String? // linked real DSA catalog problem for type=dsa
+  problem   Problem?            @relation(fields: [problemId], references: [id])
+  startedAt DateTime?
+  endedAt   DateTime?
+  turns     InterviewTurn[]
+  feedback  InterviewFeedback[]
+  report    InterviewReport?
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  @@index([userId])
+  @@index([userId, status])
+  @@index([type])
+}
+
+model InterviewTurn {
+  id              String              @id @default(cuid())
+  sessionId       String
+  session         InterviewSession    @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role            String // ai | user
+  content         String              @db.Text
+  code            String?             @db.Text
+  languageId      Int?
+  judgeVerdict    String?
+  passedTestCases Int?
+  totalTestCases  Int?
+  timeMs          Float?
+  memoryKb        Int?
+  order           Int                 @default(0)
+  feedback        InterviewFeedback[]
+  createdAt       DateTime            @default(now())
+
+  @@index([sessionId, order])
+}
+
+model InterviewFeedback {
+  id        String           @id @default(cuid())
+  sessionId String
+  session   InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  turnId    String?
+  turn      InterviewTurn?   @relation(fields: [turnId], references: [id], onDelete: Cascade)
+  skill     String
+  score     Int // 1-10
+  comment   String           @db.Text
+  createdAt DateTime         @default(now())
+
+  @@index([sessionId])
+  @@index([turnId])
+}
+
+model InterviewReport {
+  id           String           @id @default(cuid())
+  sessionId    String           @unique
+  session      InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  overallScore Int
+  summary      String           @db.Text
+  strengths    String[]
+  improvements String[]
+  suggestions  String[]
+  topicScores  Json?
+  generatedAt  DateTime         @default(now())
+
+  @@index([sessionId])
 }

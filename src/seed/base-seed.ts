@@ -72,6 +72,9 @@ export const SEED_ROLES: Array<{
       'read:dsa-leaderboard',
       'read:dsa-rating',
       'create:dsa-anti-cheat',
+      'create:interviews',
+      'read:interviews',
+      'read:interview-reports',
     ],
   },
   {

@@ -25,6 +25,7 @@ import { AcademicsModule } from './academics/academics.module';
 import { PlacementModule } from './placement/placement.module';
 import { DsaModule } from './dsa/dsa.module';
 import { JudgeModule } from './judge/judge.module';
+import { InterviewsModule } from './interviews/interview.module';
 import { HealthModule } from './health/health.module';
 
 @Module({
@@ -56,6 +57,7 @@ import { HealthModule } from './health/health.module';
     PlacementModule,
     DsaModule,
     JudgeModule,
+    InterviewsModule,
     HealthModule,
   ],
   providers: [
