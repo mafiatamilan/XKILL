@@ -5,6 +5,7 @@ import { AuditService } from '../audit/audit.service';
 import { JudgeService } from '../judge/judge.service';
 import { DsaRepository } from './dsa.repository';
 import { DsaService } from './dsa.service';
+import { DsaCompeteService } from './dsa-compete.service';
 import { DsaGateway } from './dsa.gateway';
 import { SUBMISSION_QUEUE } from './submission.queue';
 
@@ -36,6 +37,7 @@ describe('DsaService', () => {
   let audit: { record: jest.Mock };
   let gateway: { emitVerdict: jest.Mock };
   let submissionQueue: { add: jest.Mock };
+  let compete: { assertSubmittable: jest.Mock; onSubmissionGraded: jest.Mock };
 
   const problem = (id: string) => ({
     id,
@@ -120,6 +122,7 @@ describe('DsaService', () => {
     audit = { record: jest.fn() };
     gateway = { emitVerdict: jest.fn() };
     submissionQueue = { add: jest.fn() };
+    compete = { assertSubmittable: jest.fn(), onSubmissionGraded: jest.fn() };
 
     const module = await Test.createTestingModule({
       providers: [
@@ -128,6 +131,7 @@ describe('DsaService', () => {
         { provide: JudgeService, useValue: judge },
         { provide: AuditService, useValue: audit },
         { provide: DsaGateway, useValue: gateway },
+        { provide: DsaCompeteService, useValue: compete },
         { provide: getQueueToken(SUBMISSION_QUEUE), useValue: submissionQueue },
       ],
     }).compile();
@@ -210,6 +214,32 @@ describe('DsaService', () => {
         expect.objectContaining({ jobId: 's1' }),
       );
       expect(audit.record).toHaveBeenCalled();
+    });
+
+    it('tags contest submissions and validates them against the contest', async () => {
+      repository.findProblemById.mockResolvedValue(problem('p1'));
+      repository.createSubmission.mockResolvedValue(submission('s1'));
+      compete.assertSubmittable.mockResolvedValue(undefined);
+      const result = await service.submitCode('user-1', 'p1', {
+        sourceCode: 'print(1)',
+        languageId: 71,
+        contestId: 'contest-1',
+      });
+      expect(result.submissionId).toBe('s1');
+      expect(compete.assertSubmittable).toHaveBeenCalledWith('user-1', 'contest-1', 'p1');
+      expect(repository.createSubmission).toHaveBeenCalledWith(
+        expect.objectContaining({ contestId: 'contest-1' }),
+      );
+    });
+
+    it('still queues a plain submission when contestId is absent', async () => {
+      repository.findProblemById.mockResolvedValue(problem('p1'));
+      repository.createSubmission.mockResolvedValue(submission('s1'));
+      await service.submitCode('user-1', 'p1', { sourceCode: 'x', languageId: 71 });
+      expect(compete.assertSubmittable).not.toHaveBeenCalled();
+      expect(repository.createSubmission).toHaveBeenCalledWith(
+        expect.objectContaining({ contestId: undefined }),
+      );
     });
   });
 
@@ -352,6 +382,33 @@ describe('DsaService', () => {
       expect(gateway.emitVerdict).toHaveBeenCalledWith(
         'user-1',
         expect.objectContaining({ submissionId: 's1', verdict: 'accepted' }),
+      );
+    });
+
+    it('forwards graded contest submissions to the competition hook', async () => {
+      repository.findSubmissionById.mockResolvedValue(submission('s1', { contestId: 'contest-1' }));
+      repository.findHiddenTestCases.mockResolvedValue([{ stdin: '1\n', expectedOutput: '2\n' }]);
+      judge.grade.mockResolvedValue({
+        verdict: 'wrong_answer',
+        passed: 0,
+        total: 1,
+        failedCaseIndex: 0,
+        failedCaseVerdict: 'wrong_answer',
+        results: [{ index: 0, verdict: 'wrong_answer', timeMs: 10, memoryKb: 256 }],
+      });
+      repository.updateSubmission.mockResolvedValue({});
+
+      await service.gradeSubmission('s1');
+
+      expect(compete.onSubmissionGraded).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 's1',
+          userId: 'user-1',
+          contestId: 'contest-1',
+          problemId: 'p1',
+          verdict: 'wrong_answer',
+          completedAt: expect.any(Date),
+        }),
       );
     });
 

@@ -32,6 +32,10 @@ export class FakeJudgeService {
     sourceCode: string;
     testCases: JudgeTestCase[];
   }): Promise<JudgeGradeResult> {
+    const delayMs = this.delayMsFor(input.sourceCode);
+    if (delayMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
     const verdict = this.verdictFor(input.sourceCode);
     const total = input.testCases.length;
     const passed = verdict === 'accepted' ? total : 0;
@@ -48,6 +52,11 @@ export class FakeJudgeService {
         memoryKb: 1024,
       })),
     };
+  }
+
+  private delayMsFor(sourceCode: string): number {
+    const match = sourceCode.match(/\/\/\s*SLOW:(\d+)/);
+    return match ? Number(match[1]) : 0;
   }
 
   private verdictFor(sourceCode: string): Verdict {

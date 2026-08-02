@@ -86,6 +86,13 @@ export class SubmitCodeDto {
   @IsNotEmpty()
   @MaxLength(100_000)
   sourceCode!: string;
+
+  @ApiPropertyOptional({
+    description: 'Optional contest id — tags the submission as a contest attempt',
+  })
+  @IsOptional()
+  @IsString()
+  contestId?: string;
 }
 
 export class UnlockHintDto {

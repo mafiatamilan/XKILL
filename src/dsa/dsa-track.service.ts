@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { buildPaginationMeta } from '../common/pagination/pagination.dto';
 import { DsaRepository } from './dsa.repository';
+import { DsaCompeteService } from './dsa-compete.service';
 import { computeAnalytics } from './calculators/analytics.calculator';
 import { computeProgress } from './calculators/progress.calculator';
 import { DEFAULT_VISIBILITY, DsaVisibilitySettings } from './calculators/profile-visibility';
@@ -15,7 +16,10 @@ const PLAYLIST_NOT_FOUND = { code: 'PLAYLIST_NOT_FOUND', message: 'Playlist not 
 
 @Injectable()
 export class DsaTrackService {
-  constructor(private readonly repository: DsaRepository) {}
+  constructor(
+    private readonly repository: DsaRepository,
+    private readonly compete: DsaCompeteService,
+  ) {}
 
   // ---- Playlists ----
 
@@ -164,7 +168,10 @@ export class DsaTrackService {
   }
 
   async getMyAnalytics(userId: string) {
-    const submissions = await this.repository.findSubmissionsForAnalytics(userId);
+    const [submissions, ratingHistory] = await Promise.all([
+      this.repository.findSubmissionsForAnalytics(userId),
+      this.compete.getRatingHistoryForAnalytics(userId),
+    ]);
     return computeAnalytics({
       submissions: submissions.map((row) => ({
         verdict: row.verdict,
@@ -173,6 +180,7 @@ export class DsaTrackService {
         topics: row.problem.topics,
         submittedAt: row.submittedAt,
       })),
+      ratingHistory,
     });
   }
 

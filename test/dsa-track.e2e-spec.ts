@@ -364,7 +364,7 @@ describe('DSA Platform — organize & track (e2e)', () => {
   });
 
   describe('analytics/me', () => {
-    it('computes accuracy, runtime and exposes the rating placeholder', async () => {
+    it('computes accuracy, runtime and exposes an unavailable rating trend without history', async () => {
       const { token } = await createStudent();
       const problem = await seedProblem({ topics: ['array'] });
 
@@ -373,7 +373,7 @@ describe('DSA Platform — organize & track (e2e)', () => {
       expect(empty.body.accuracy).toBeNull();
       expect(empty.body.ratingTrend).toEqual({
         available: false,
-        message: expect.stringContaining('5.5c'),
+        message: 'No rated contest history yet',
       });
 
       await solve(token, problem.id);

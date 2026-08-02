@@ -186,9 +186,50 @@ describe('computeAnalytics', () => {
     });
   });
 
-  it('emits the rating-trend placeholder until contests ship (5.5c)', () => {
+  it('marks the rating trend unavailable with no contest history', () => {
     const result = computeAnalytics(input([]));
     expect(result.ratingTrend.available).toBe(false);
-    expect(result.ratingTrend.message).toContain('5.5c');
+    expect(result.ratingTrend.message).toContain('No rated contest history');
+  });
+
+  it('builds rating-trend points from contest history when present', () => {
+    const result = computeAnalytics({
+      ...input([]),
+      ratingHistory: [
+        {
+          contestName: 'Weekly 1',
+          rank: 1,
+          ratingBefore: 1200,
+          ratingAfter: 1240,
+          date: new Date('2026-08-01T00:00:00Z'),
+        },
+        {
+          contestName: 'Weekly 2',
+          rank: 5,
+          ratingBefore: 1240,
+          ratingAfter: 1215,
+          date: new Date('2026-08-08T00:00:00Z'),
+        },
+      ],
+    });
+    expect(result.ratingTrend.available).toBe(true);
+    expect(result.ratingTrend.points).toEqual([
+      {
+        contestName: 'Weekly 1',
+        rank: 1,
+        ratingBefore: 1200,
+        ratingAfter: 1240,
+        change: 40,
+        date: '2026-08-01T00:00:00.000Z',
+      },
+      {
+        contestName: 'Weekly 2',
+        rank: 5,
+        ratingBefore: 1240,
+        ratingAfter: 1215,
+        change: -25,
+        date: '2026-08-08T00:00:00.000Z',
+      },
+    ]);
   });
 });

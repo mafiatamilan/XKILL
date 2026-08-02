@@ -51,9 +51,14 @@ model User {
   solvedProblems          SolvedProblem[]
   hintUnlocks             HintUnlock[]
   playlists               Playlist[]
-  discussionPosts         Discussion[]           @relation("DiscussionAuthor")
+  discussionPosts         Discussion[]             @relation("DiscussionAuthor")
   discussionVotes         DiscussionVote[]
   dsaProfileVisibility    DsaProfileVisibility?
+  contestParticipants     ContestParticipant[]     @relation("ContestParticipants")
+  contestCreated          Contest[]
+  codingRating            CodingRating?            @relation("CodingRatingUser")
+  ratingHistory           CodingRatingHistory[]    @relation("CodingRatingHistoryUser")
+  antiCheatEvents         AntiCheatEvent[]         @relation("AntiCheatUser")
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
 
@@ -261,32 +266,32 @@ model ReadinessScore {
 }
 
 model ReadinessPrediction {
-  id              String   @id @default(cuid())
-  userId          String   @unique
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  readinessScore  Int
-  predictedLevel  String // low | medium | high
-  monthsToReady   Int
-  components      Json
-  predictedAt     DateTime @default(now())
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readinessScore Int
+  predictedLevel String // low | medium | high
+  monthsToReady  Int
+  components     Json
+  predictedAt    DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@index([predictedLevel])
   @@index([predictedAt])
 }
 
 model RoadmapWeek {
-  id            String      @id @default(cuid())
-  userId        String
-  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  weekNumber    Int
-  title         String
-  focus         String
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weekNumber Int
+  title      String
+  focus      String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  tasks         DailyTask[]
+  tasks DailyTask[]
 
   @@unique([userId, weekNumber])
   @@index([userId])
@@ -350,13 +355,13 @@ model DailyChallenge {
 }
 
 model StudyPlan {
-  id         String   @id @default(cuid())
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title      String
-  plan       Json
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  plan      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
 }
@@ -659,20 +664,20 @@ model AuditLog {
 // ---------------------------------------------------------------------------
 
 model Problem {
-  id            String     @id @default(cuid())
-  slug          String     @unique
+  id            String   @id @default(cuid())
+  slug          String   @unique
   title         String
-  statement     String     @db.Text
+  statement     String   @db.Text
   difficulty    String // easy | medium | hard
   topics        String[]
   companies     String[]
   tags          String[]
-  timeLimitMs   Int        @default(1000)
-  memoryLimitMb Int        @default(256)
-  isPremium     Boolean    @default(false)
-  isActive      Boolean    @default(true)
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  timeLimitMs   Int      @default(1000)
+  memoryLimitMb Int      @default(256)
+  isPremium     Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   testCases       TestCase[]
   editorial       Editorial?
@@ -683,6 +688,7 @@ model Problem {
   playlistEntries PlaylistProblem[]
   sheetEntries    SheetProblem[]
   discussions     Discussion[]
+  contestEntries  ContestProblem[]
 
   @@index([difficulty])
   @@index([isActive])
@@ -728,31 +734,34 @@ model Hint {
 }
 
 model Submission {
-  id                 String    @id @default(cuid())
-  userId             String
-  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  problemId          String
-  problem            Problem   @relation(fields: [problemId], references: [id], onDelete: Cascade)
-  languageId         Int
-  sourceCode         String    @db.Text
-  status             String    @default("queued") // queued | running | completed | failed
-  verdict            String? // accepted | wrong_answer | time_limit_exceeded | memory_limit_exceeded | runtime_error | compilation_error
-  passedTestCases    Int       @default(0)
-  totalTestCases     Int       @default(0)
-  failedCaseIndex    Int?
-  failedCaseVerdict  String?
-  errorMessage       String?
-  stdout             String?   @db.Text
-  stderr             String?   @db.Text
-  timeMs             Float?
-  memoryKb           Int?
-  submittedAt        DateTime  @default(now())
-  completedAt        DateTime?
-  createdAt          DateTime  @default(now())
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problemId         String
+  problem           Problem   @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  contestId         String?
+  contest           Contest?  @relation(fields: [contestId], references: [id])
+  languageId        Int
+  sourceCode        String    @db.Text
+  status            String    @default("queued") // queued | running | completed | failed
+  verdict           String? // accepted | wrong_answer | time_limit_exceeded | memory_limit_exceeded | runtime_error | compilation_error
+  passedTestCases   Int       @default(0)
+  totalTestCases    Int       @default(0)
+  failedCaseIndex   Int?
+  failedCaseVerdict String?
+  errorMessage      String?
+  stdout            String?   @db.Text
+  stderr            String?   @db.Text
+  timeMs            Float?
+  memoryKb          Int?
+  submittedAt       DateTime  @default(now())
+  completedAt       DateTime?
+  createdAt         DateTime  @default(now())
 
   @@index([userId])
   @@index([problemId])
   @@index([userId, problemId])
+  @@index([contestId])
   @@index([status])
   @@index([verdict])
   @@index([submittedAt])
@@ -773,14 +782,14 @@ model SolvedProblem {
 }
 
 model HintUnlock {
-  id             String   @id @default(cuid())
-  userId         String
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  problemId      String
-  problem        Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
-  unlockedHints  Int      @default(1) // highest hint order revealed for this user+problem
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problemId     String
+  problem       Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  unlockedHints Int      @default(1) // highest hint order revealed for this user+problem
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@unique([userId, problemId])
   @@index([userId])
@@ -792,15 +801,15 @@ model HintUnlock {
 // ---------------------------------------------------------------------------
 
 model Playlist {
-  id          String             @id @default(cuid())
+  id          String            @id @default(cuid())
   userId      String
-  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   title       String
   description String?
-  isPublic    Boolean            @default(false) // shared lists are public; private lists 404 for others
+  isPublic    Boolean           @default(false) // shared lists are public; private lists 404 for others
   problems    PlaylistProblem[]
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
 
   @@index([userId])
   @@index([isPublic])
@@ -833,12 +842,12 @@ model Sheet {
 }
 
 model SheetProblem {
-  id        String  @id @default(cuid())
+  id        String   @id @default(cuid())
   sheetId   String
-  sheet     Sheet   @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  sheet     Sheet    @relation(fields: [sheetId], references: [id], onDelete: Cascade)
   problemId String
-  problem   Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
-  order     Int     @default(0)
+  problem   Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  order     Int      @default(0)
   createdAt DateTime @default(now())
 
   @@unique([sheetId, problemId])
@@ -889,4 +898,126 @@ model DsaProfileVisibility {
   showRating      Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// DSA Platform — compete (5.5c)
+
+model Contest {
+  id                   String               @id @default(cuid())
+  slug                 String               @unique
+  title                String
+  description          String?              @db.Text
+  startTime            DateTime
+  endTime              DateTime
+  status               String               @default("draft") // draft | published | ongoing | finished | cancelled
+  isRated              Boolean              @default(false)
+  rules                String?              @db.Text
+  createdBy            String
+  problems             ContestProblem[]
+  participants         ContestParticipant[]
+  standingsFinalizedAt DateTime?
+  submissions          Submission[]
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  user                 User?                @relation(fields: [userId], references: [id])
+  userId               String?
+
+  @@index([status])
+  @@index([startTime, endTime])
+}
+
+model ContestProblem {
+  id            String         @id @default(cuid())
+  contestId     String
+  contest       Contest        @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  problemId     String
+  problem       Problem        @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  order         Int            @default(0)
+  basePoints    Int            @default(100)
+  createdAt     DateTime       @default(now())
+  contestSolves ContestSolve[]
+
+  @@unique([contestId, problemId])
+  @@index([problemId])
+}
+
+model ContestParticipant {
+  id             String         @id @default(cuid())
+  contestId      String
+  contest        Contest        @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User           @relation("ContestParticipants", fields: [userId], references: [id], onDelete: Cascade)
+  score          Float          @default(0)
+  penaltySeconds Int            @default(0)
+  rank           Int?
+  ratingBefore   Int?
+  ratingAfter    Int?
+  ratingDelta    Int?
+  solvedProblems ContestSolve[]
+  registeredAt   DateTime       @default(now())
+
+  @@unique([contestId, userId])
+  @@index([userId])
+  @@index([contestId, score])
+}
+
+model ContestSolve {
+  id               String             @id @default(cuid())
+  participantId    String
+  participant      ContestParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  contestProblemId String
+  contestProblem   ContestProblem     @relation(fields: [contestProblemId], references: [id], onDelete: Cascade)
+  firstAcceptedAt  DateTime?
+  attemptCount     Int                @default(0)
+  maxPointsEarned  Float              @default(0)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  @@unique([participantId, contestProblemId])
+  @@index([contestProblemId])
+}
+
+model CodingRating {
+  id                   String                @id @default(cuid())
+  userId               String                @unique
+  user                 User                  @relation("CodingRatingUser", fields: [userId], references: [id], onDelete: Cascade)
+  rating               Int                   @default(1200)
+  bestRating           Int                   @default(1200)
+  contestsParticipated Int                   @default(0)
+  history              CodingRatingHistory[]
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+}
+
+model CodingRatingHistory {
+  id             String       @id @default(cuid())
+  codingRatingId String
+  codingRating   CodingRating @relation(fields: [codingRatingId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation("CodingRatingHistoryUser", fields: [userId], references: [id], onDelete: Cascade)
+  contestId      String?
+  contestName    String?
+  rank           Int
+  ratingBefore   Int
+  ratingAfter    Int
+  delta          Int
+  createdAt      DateTime     @default(now())
+
+  @@index([userId])
+  @@index([codingRatingId])
+}
+
+model AntiCheatEvent {
+  id         String   @id @default(cuid())
+  sourceType String // dsa-contest | coding-battle | practical-exam
+  sourceId   String
+  userId     String
+  user       User     @relation("AntiCheatUser", fields: [userId], references: [id], onDelete: Cascade)
+  eventType  String // tab-switch | copy-paste | focus-out | suspicious-submission
+  detail     Json?
+  createdAt  DateTime @default(now())
+
+  @@index([sourceType, sourceId])
+  @@index([userId])
 }

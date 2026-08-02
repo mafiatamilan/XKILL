@@ -4,6 +4,7 @@ import { Queue } from 'bullmq';
 import { AuditService } from '../audit/audit.service';
 import { JudgeService } from '../judge/judge.service';
 import { DsaRepository, ProblemFilters, SubmissionDetail } from './dsa.repository';
+import { DsaCompeteService } from './dsa-compete.service';
 import { DsaGateway } from './dsa.gateway';
 import { SUBMISSION_QUEUE, SubmissionJobData } from './submission.queue';
 import { buildPaginationMeta } from '../common/pagination/pagination.dto';
@@ -17,6 +18,7 @@ export interface RunCodeInput {
 export interface SubmitCodeInput {
   sourceCode: string;
   languageId: number;
+  contestId?: string;
 }
 
 @Injectable()
@@ -26,6 +28,7 @@ export class DsaService {
     private readonly judge: JudgeService,
     private readonly audit: AuditService,
     private readonly gateway: DsaGateway,
+    private readonly compete: DsaCompeteService,
     @InjectQueue(SUBMISSION_QUEUE) private readonly submissionQueue: Queue<SubmissionJobData>,
   ) {}
 
@@ -88,11 +91,15 @@ export class DsaService {
     if (!problem) {
       throw new NotFoundException({ code: 'PROBLEM_NOT_FOUND', message: 'Problem not found' });
     }
+    if (input.contestId) {
+      await this.compete.assertSubmittable(userId, input.contestId, problemId);
+    }
     const submission = await this.repository.createSubmission({
       userId,
       problemId,
       languageId: input.languageId,
       sourceCode: input.sourceCode,
+      contestId: input.contestId,
     });
     await this.submissionQueue.add(
       'grade',
@@ -245,6 +252,7 @@ export class DsaService {
 
       const times = result.results.map((item) => item.timeMs ?? 0);
       const memories = result.results.map((item) => item.memoryKb ?? 0);
+      const completedAt = new Date();
 
       await this.repository.updateSubmission(submissionId, {
         status: 'completed',
@@ -257,12 +265,21 @@ export class DsaService {
         memoryKb: memories.length
           ? Math.round(memories.reduce((a, b) => a + b, 0) / memories.length)
           : undefined,
-        completedAt: new Date(),
+        completedAt,
       });
 
       if (result.verdict === 'accepted') {
         await this.repository.markSolved(submission.userId, submission.problemId);
       }
+
+      await this.compete.onSubmissionGraded({
+        id: submission.id,
+        userId: submission.userId,
+        contestId: submission.contestId,
+        problemId: submission.problemId,
+        verdict: result.verdict,
+        completedAt,
+      });
 
       await this.audit.record({
         userId: submission.userId,

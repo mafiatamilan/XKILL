@@ -27,7 +27,16 @@ export interface AnalyticsSubmissionInput {
 
 export interface AnalyticsInput {
   submissions: AnalyticsSubmissionInput[];
+  ratingHistory?: AnalyticsRatingPoint[];
   now?: Date;
+}
+
+export interface AnalyticsRatingPoint {
+  contestName: string | null;
+  rank: number;
+  ratingBefore: number;
+  ratingAfter: number;
+  date: Date;
 }
 
 export interface TopicPerformance {
@@ -67,8 +76,16 @@ export interface AnalyticsResult {
   weeklyProgress: WeekBucket[];
   monthlyProgress: MonthBucket[];
   ratingTrend: {
-    available: false;
-    message: string;
+    available: boolean;
+    message?: string;
+    points?: Array<{
+      contestName: string;
+      rank: number;
+      ratingBefore: number;
+      ratingAfter: number;
+      change: number;
+      date: string;
+    }>;
   };
 }
 
@@ -267,10 +284,28 @@ export function computeAnalytics(input: AnalyticsInput): AnalyticsResult {
     heatmap,
     weeklyProgress,
     monthlyProgress,
-    ratingTrend: {
+    ratingTrend: buildRatingTrend(input.ratingHistory),
+  };
+}
+
+function buildRatingTrend(
+  history: AnalyticsRatingPoint[] | undefined,
+): AnalyticsResult['ratingTrend'] {
+  if (!history || history.length === 0) {
+    return {
       available: false,
-      message:
-        'Rating trend is not yet available — it requires contest history which ships in module 5.5c',
-    },
+      message: 'No rated contest history yet',
+    };
+  }
+  return {
+    available: true,
+    points: history.map((point) => ({
+      contestName: point.contestName ?? 'Contest',
+      rank: point.rank,
+      ratingBefore: point.ratingBefore,
+      ratingAfter: point.ratingAfter,
+      change: point.ratingAfter - point.ratingBefore,
+      date: point.date.toISOString(),
+    })),
   };
 }

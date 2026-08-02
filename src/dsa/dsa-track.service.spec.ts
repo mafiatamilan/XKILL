@@ -1,6 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import { DsaRepository } from './dsa.repository';
 import { DsaTrackService } from './dsa-track.service';
+import { DsaCompeteService } from './dsa-compete.service';
 
 describe('DsaTrackService', () => {
   const repository = {
@@ -26,11 +27,17 @@ describe('DsaTrackService', () => {
     upvoteDiscussion: jest.fn(),
     findProblemById: jest.fn(),
   };
+  const compete = {
+    getRatingHistoryForAnalytics: jest.fn(),
+  };
   let service: DsaTrackService;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new DsaTrackService(repository as unknown as DsaRepository);
+    service = new DsaTrackService(
+      repository as unknown as DsaRepository,
+      compete as unknown as DsaCompeteService,
+    );
   });
 
   const playlist = (overrides: Record<string, unknown> = {}) => ({
@@ -247,7 +254,7 @@ describe('DsaTrackService', () => {
       expect(result.byDifficulty).toEqual({ easy: 1, medium: 1, hard: 0 });
     });
 
-    it('computes analytics from live submissions with the rating placeholder', async () => {
+    it('computes analytics from live submissions with an unavailable rating trend by default', async () => {
       repository.findSubmissionsForAnalytics.mockResolvedValue([
         {
           verdict: 'accepted',
@@ -257,11 +264,35 @@ describe('DsaTrackService', () => {
           problem: { topics: ['array'] },
         },
       ]);
+      compete.getRatingHistoryForAnalytics.mockResolvedValue([]);
       const result = await service.getMyAnalytics('u1');
       expect(result.accuracy).toBe(100);
       expect(result.averageRuntimeMs).toBe(10);
       expect(result.ratingTrend.available).toBe(false);
-      expect(result.ratingTrend.message).toContain('5.5c');
+      expect(result.ratingTrend.message).toContain('No rated contest history');
+    });
+
+    it('includes real rating-trend points when contest history exists', async () => {
+      repository.findSubmissionsForAnalytics.mockResolvedValue([]);
+      compete.getRatingHistoryForAnalytics.mockResolvedValue([
+        {
+          contestName: 'Weekly 1',
+          rank: 1,
+          ratingBefore: 1200,
+          ratingAfter: 1240,
+          date: new Date('2026-08-01T00:00:00Z'),
+        },
+      ]);
+      const result = await service.getMyAnalytics('u1');
+      expect(result.ratingTrend.available).toBe(true);
+      expect(result.ratingTrend.points).toHaveLength(1);
+      expect(result.ratingTrend.points?.[0]).toMatchObject({
+        contestName: 'Weekly 1',
+        rank: 1,
+        ratingBefore: 1200,
+        ratingAfter: 1240,
+        change: 40,
+      });
     });
   });
 

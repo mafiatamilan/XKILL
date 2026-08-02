@@ -144,6 +144,7 @@ export class DsaRepository {
     problemId: string;
     languageId: number;
     sourceCode: string;
+    contestId?: string;
   }) {
     return this.prisma.submission.create({ data });
   }
