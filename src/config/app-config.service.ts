@@ -38,6 +38,13 @@ export interface AppConfig {
   };
   judge0BaseUrl: string;
   judge0AuthToken: string;
+  ai: {
+    baseUrl: string;
+    apiKey: string;
+    provider: string;
+    model: string;
+    maxTokens: number;
+  };
   rateLimit: {
     ttlMs: number;
     limit: number;
@@ -85,6 +92,13 @@ export class AppConfigService {
       },
       judge0BaseUrl: this.config.getOrThrow<string>('JUDGE0_BASE_URL'),
       judge0AuthToken: this.config.getOrThrow<string>('JUDGE0_AUTH_TOKEN'),
+      ai: {
+        baseUrl: this.config.getOrThrow<string>('OPENCODE_BASE_URL'),
+        apiKey: this.config.getOrThrow<string>('OPENCODE_API_KEY'),
+        provider: this.config.getOrThrow<string>('OPENCODE_PROVIDER'),
+        model: this.config.getOrThrow<string>('OPENCODE_MODEL'),
+        maxTokens: this.config.getOrThrow<number>('OPENCODE_MAX_TOKENS'),
+      },
       rateLimit: {
         ttlMs: this.config.getOrThrow<number>('RATE_LIMIT_TTL_MS'),
         limit: this.config.getOrThrow<number>('RATE_LIMIT_LIMIT'),

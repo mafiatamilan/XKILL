@@ -25,6 +25,13 @@ export function mockConfig(overrides: Partial<AppConfig> = {}): AppConfigService
     mail: { driver: 'console', from: 'noreply@xkill.app', host: '', port: 587, user: '', pass: '' },
     judge0BaseUrl: '',
     judge0AuthToken: '',
+    ai: {
+      baseUrl: 'https://opencode.ai/zen/v1/responses',
+      apiKey: '',
+      provider: 'opencode',
+      model: 'deepseek-v4-flash-free',
+      maxTokens: 2048,
+    },
     rateLimit: { ttlMs: 60000, limit: 100, authLimit: 10 },
     adminEmail: 'admin@xkill.app',
     adminPassword: 'Admin@1234',

@@ -35,6 +35,10 @@ model User {
   skillProfiles           SkillProfile[]
   careerGoals             CareerGoal[]
   readinessScore          ReadinessScore?
+  readinessPrediction     ReadinessPrediction?
+  roadmapWeeks            RoadmapWeek[]
+  progressRecords         ProgressRecord[]
+  studyPlans              StudyPlan[]
   notifications           Notification[]
   calendarEvents          CalendarEvent[]
   activityLogs            ActivityLog[]
@@ -247,6 +251,107 @@ model ReadinessScore {
 
   @@index([overall])
   @@index([calculatedAt])
+}
+
+model ReadinessPrediction {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readinessScore  Int
+  predictedLevel  String // low | medium | high
+  monthsToReady   Int
+  components      Json
+  predictedAt     DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([predictedLevel])
+  @@index([predictedAt])
+}
+
+model RoadmapWeek {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weekNumber    Int
+  title         String
+  focus         String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  tasks         DailyTask[]
+
+  @@unique([userId, weekNumber])
+  @@index([userId])
+}
+
+model DailyTask {
+  id            String      @id @default(cuid())
+  roadmapWeekId String
+  roadmapWeek   RoadmapWeek @relation(fields: [roadmapWeekId], references: [id], onDelete: Cascade)
+  day           Int
+  title         String
+  description   String
+  taskType      String // dsa | aptitude | company | project | resume | mock
+  reference     String? // generic reference, no FK to DSA Problem yet
+  isCompleted   Boolean     @default(false)
+  completedAt   DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([roadmapWeekId])
+}
+
+model CompanyPrepTrack {
+  id          String   @id @default(cuid())
+  company     String   @unique
+  description String
+  focusAreas  String[]
+  resources   Json?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([company])
+}
+
+model ProgressRecord {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalTasks Int
+  completed  Int
+  percent    Int
+  recordedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([recordedAt])
+}
+
+model DailyChallenge {
+  id          String   @id @default(cuid())
+  date        DateTime @unique
+  title       String
+  description String
+  taskType    String // dsa | aptitude | company | project | mock
+  reference   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([date])
+}
+
+model StudyPlan {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title      String
+  plan       Json
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model Notification {

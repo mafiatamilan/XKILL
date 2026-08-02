@@ -10,6 +10,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { RedisModule } from './redis/redis.module';
 import { AuditModule } from './audit/audit.module';
 import { MailerModule } from './mailer/mailer.module';
+import { AiModule } from './ai/ai.module';
 import { JsonLoggerService } from './common/logger/json-logger.service';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -21,6 +22,7 @@ import { UsersModule } from './users/users.module';
 import { AdminModule } from './admin/admin.module';
 import { StudentsModule } from './students/students.module';
 import { AcademicsModule } from './academics/academics.module';
+import { PlacementModule } from './placement/placement.module';
 import { HealthModule } from './health/health.module';
 
 @Module({
@@ -43,11 +45,13 @@ import { HealthModule } from './health/health.module';
     RedisModule,
     AuditModule,
     MailerModule,
+    AiModule,
     AuthModule,
     UsersModule,
     AdminModule,
     StudentsModule,
     AcademicsModule,
+    PlacementModule,
     HealthModule,
   ],
   providers: [

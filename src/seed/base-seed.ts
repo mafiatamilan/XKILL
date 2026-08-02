@@ -42,6 +42,13 @@ export const SEED_ROLES: Array<{
       'read:academics-gpa',
       'read:academics-cgpa',
       'read:academics-calendar',
+      'read:placement-roadmap',
+      'read:placement-company-prep',
+      'read:placement-progress',
+      'read:placement-readiness',
+      'read:placement-daily-challenge',
+      'create:placement-study-planner',
+      'update:placement-tasks',
     ],
   },
   {

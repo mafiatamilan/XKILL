@@ -16,15 +16,27 @@ export interface TestApp {
 /**
  * Boots the real AppModule against the given database URL with the mail transport
  * swapped for the in-memory FakeMailer. No DB mocking: everything runs on real
- * Postgres/Redis.
+ * Postgres/Redis. `overrides` lets individual suites swap additional providers
+ * (e.g. the AI service) for fakes.
  */
-export async function createTestApp(databaseUrl: string): Promise<TestApp> {
+export async function createTestApp(
+  databaseUrl: string,
+  overrides: Array<{
+    token: unknown;
+    useClass: unknown;
+  }> = [],
+): Promise<TestApp> {
   process.env.DATABASE_URL = databaseUrl;
 
-  const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
+  let builder = Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(MailService)
-    .useClass(FakeMailer)
-    .compile();
+    .useClass(FakeMailer);
+
+  for (const override of overrides) {
+    builder = builder.overrideProvider(override.token).useClass(override.useClass as never);
+  }
+
+  const moduleRef = await builder.compile();
 
   const app = moduleRef.createNestApplication();
   configureApp(app);

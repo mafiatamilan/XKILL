@@ -39,6 +39,12 @@ const EnvSchema = z.object({
   JUDGE0_BASE_URL: z.string().optional().default(''),
   JUDGE0_AUTH_TOKEN: z.string().optional().default(''),
 
+  OPENCODE_BASE_URL: z.string().optional().default('https://opencode.ai/zen/v1/responses'),
+  OPENCODE_API_KEY: z.string().optional().default(''),
+  OPENCODE_PROVIDER: z.string().optional().default('opencode'),
+  OPENCODE_MODEL: z.string().optional().default('deepseek-v4-flash-free'),
+  OPENCODE_MAX_TOKENS: z.coerce.number().int().min(1).optional().default(2048),
+
   RATE_LIMIT_TTL_MS: z.coerce.number().int().min(1000).default(60000),
   RATE_LIMIT_LIMIT: z.coerce.number().int().min(1).default(120),
   AUTH_RATE_LIMIT_LIMIT: z.coerce.number().int().min(1).default(10),

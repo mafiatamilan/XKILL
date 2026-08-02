@@ -9,7 +9,7 @@ to the next one.
 - [x] 5.1 Auth & Identity
 - [x] 5.2 Student Platform
 - [x] 5.3 College Academic Module
-- [ ] 5.4 Placement Preparation
+- [x] 5.4 Placement Preparation
 - [ ] 5.5 / 5.20 DSA Platform (core + extended)
 - [ ] 5.6 AI Interview Engine
 - [ ] 5.7 AI Career Coach
@@ -52,7 +52,8 @@ to the next one.
 | 5.1 Auth & Identity | 187 | 64 | 95.46 / 90.1 / 85.48 / 95.16 |
 | 5.2 Student Platform | 99 | 24 | — (module-level: students 100% funcs, repo 100%, readiness 100%) |
 | 5.3 College Academic Module | 183 | 33 | — (module-level 96.83 / 81.93 / 98.23 / 96.66; faculty service 100%, repo 97.7 / 82.5 / 97.18 / 97.64, calculators 100% funcs) |
-| **Full suite (cumulative)** | **469** | **121** | **96.87 / 84.75 / 94.35 / 96.71** |
+| 5.4 Placement Preparation (incl. shared AiService) | 61 | 13 | — (full-suite stmts/branch/funcs/lines 96.24 / 84.41 / 92.8 / 96.11) |
+| **Full suite (cumulative)** | **530** | **134** | **96.24 / 84.41 / 92.8 / 96.11** |
 
 Coverage gates (global thresholds in package.json): statements ≥85, branches ≥80, functions ≥85, lines ≥85.
 
@@ -70,3 +71,9 @@ consistent with earlier ones.
 | 2026-08-02 | 5.3 Who may create/assign faculty to subjects — faculty or admin? | Both. Faculty `POST /faculty/subjects` self-assigns; admin `POST /admin/courses` can optionally pass `facultyId`. A subject is always owned by exactly one faculty member, and every faculty write path (materials/attendance/assignments/exams/marks/question-bank) re-checks ownership → 403 `SUBJECT_NOT_ASSIGNED` otherwise. |
 | 2026-08-02 | 5.3 `enterBulkMarks` rollback semantics in e2e | Transactional: a mid-batch failure (invalid student, `marksObtained > maxMarks`) throws inside `$transaction`, so zero rows persist — e2e asserts the mark count is unchanged after a forced 2-row failure. |
 | 2026-08-02 | 5.3 Student `@Resource('academics-*')` permissions | The student seed role now grants `read:academics-*` (plus `create:academics-assignments` for submission); without these the RolesGuard 403s every `/academics/*` request. Discovered via the e2e suite. |
+| 2026-08-02 | 5.4 AI backend — which AI provider should the shared AiService call? | User override: NOT Claude/Anthropic. Use **opencode**. Initial wiring used `@opencode-ai/sdk` against a headless `opencode serve`, but the user then pinned the call to the opencode **Responses API** at `https://opencode.ai/zen/v1/responses` with a Bearer API key. |
+| 2026-08-02 | 5.4 How should AiService reach `https://opencode.ai/zen/v1/responses`? | **Direct HTTPS fetch** (chosen by user) — drop `@opencode-ai/sdk` entirely. `createAiClient` keeps the SDK's session/prompt shape so `AiService` is unchanged, POSTs the OpenAI-compatible body `{model, instructions, input:[{role, content:[{type:'input_text',text}]}]}`, and reads `output[].content[].output_text`. |
+| 2026-08-02 | 5.4 AI auth/credential model | `OPENCODE_API_KEY` (Bearer) — currently empty in `.env`; user will supply it when needed. Base URL default `https://opencode.ai/zen/v1/responses`. No basic-auth username/password anymore. |
+| 2026-08-02 | 5.4 How do the placement readiness prediction and 5.2 ReadinessScore relate? | The prediction **extends** the 5.2 scorer — `calculateReadinessScore` (5.2) stays the single source of truth for the base score; placement adds roadmap progress + target-company count on top: composite = 70% readiness + 30% progress, ×0.9 penalty when no target companies, levels high≥75 / medium≥50 / low, monthsToReady 1/3/6. |
+| 2026-08-02 | 5.4 How should the AI-dependent study planner be tested? | Mock the AI client everywhere (jest `moduleNameMapper`-free — plain mocked `fetch` in unit specs, `FakeAiService` overriding `AiService` in e2e). No real server in CI. `AiService.generateStructured` retries once on malformed/invalid responses, then throws a clean `AiServiceError`; upstream HTTP errors propagate immediately. |
+| 2026-08-02 | 5.4 Roadmap lazy generation + persistence | `GET /placement/roadmap` generates a personalized 10-week × 7-task roadmap on first access (persisted), reused afterwards; week `tasks` are returned via the seed permission `update:placement-tasks` for completion. |
