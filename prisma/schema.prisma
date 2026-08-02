@@ -47,6 +47,9 @@ model User {
   attendanceRecords       AttendanceRecord[]       @relation("StudentAttendance")
   internalMarks           InternalMark[]           @relation("StudentInternalMarks")
   assignmentSubmissions   AssignmentSubmission[]   @relation("StudentSubmissions")
+  dsaSubmissions          Submission[]
+  solvedProblems          SolvedProblem[]
+  hintUnlocks             HintUnlock[]
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
 
@@ -645,4 +648,134 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([action])
   @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// DSA Platform (5.5 / 5.20)
+// ---------------------------------------------------------------------------
+
+model Problem {
+  id            String     @id @default(cuid())
+  slug          String     @unique
+  title         String
+  statement     String     @db.Text
+  difficulty    String // easy | medium | hard
+  topics        String[]
+  companies     String[]
+  tags          String[]
+  timeLimitMs   Int        @default(1000)
+  memoryLimitMb Int        @default(256)
+  isPremium     Boolean    @default(false)
+  isActive      Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  testCases   TestCase[]
+  editorial   Editorial?
+  hints       Hint[]
+  submissions Submission[]
+  hintUnlocks HintUnlock[]
+  solvedBy    SolvedProblem[]
+
+  @@index([difficulty])
+  @@index([isActive])
+  @@index([topics(ops: ArrayOps)], type: Gin)
+  @@index([companies(ops: ArrayOps)], type: Gin)
+  @@index([tags(ops: ArrayOps)], type: Gin)
+}
+
+model TestCase {
+  id             String   @id @default(cuid())
+  problemId      String
+  problem        Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  input          String   @db.Text
+  expectedOutput String   @db.Text
+  isSample       Boolean  @default(false)
+  order          Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  @@index([problemId])
+  @@index([problemId, isSample])
+}
+
+model Editorial {
+  id         String   @id @default(cuid())
+  problemId  String   @unique
+  problem    Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  content    String   @db.Text
+  complexity String? // e.g. "O(n) time, O(1) space"
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Hint {
+  id        String   @id @default(cuid())
+  problemId String
+  problem   Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  order     Int
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([problemId])
+  @@index([problemId, order])
+}
+
+model Submission {
+  id                 String    @id @default(cuid())
+  userId             String
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problemId          String
+  problem            Problem   @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  languageId         Int
+  sourceCode         String    @db.Text
+  status             String    @default("queued") // queued | running | completed | failed
+  verdict            String? // accepted | wrong_answer | time_limit_exceeded | memory_limit_exceeded | runtime_error | compilation_error
+  passedTestCases    Int       @default(0)
+  totalTestCases     Int       @default(0)
+  failedCaseIndex    Int?
+  failedCaseVerdict  String?
+  errorMessage       String?
+  stdout             String?   @db.Text
+  stderr             String?   @db.Text
+  timeMs             Float?
+  memoryKb           Int?
+  submittedAt        DateTime  @default(now())
+  completedAt        DateTime?
+  createdAt          DateTime  @default(now())
+
+  @@index([userId])
+  @@index([problemId])
+  @@index([userId, problemId])
+  @@index([status])
+  @@index([verdict])
+  @@index([submittedAt])
+}
+
+model SolvedProblem {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problemId     String
+  problem       Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  firstSolvedAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  @@unique([userId, problemId])
+  @@index([userId])
+  @@index([problemId])
+}
+
+model HintUnlock {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problemId      String
+  problem        Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  unlockedHints  Int      @default(1) // highest hint order revealed for this user+problem
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([userId, problemId])
+  @@index([userId])
+  @@index([problemId])
 }

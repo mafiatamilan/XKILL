@@ -1,8 +1,9 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppConfigService } from './config/app-config.service';
+import { RedisIoAdapter } from './common/ws/redis-io.adapter';
 
-export function configureApp(app: INestApplication): INestApplication {
+export async function configureApp(app: INestApplication): Promise<INestApplication> {
   const config = app.get(AppConfigService).get();
 
   app.setGlobalPrefix('api/v1');
@@ -27,6 +28,10 @@ export function configureApp(app: INestApplication): INestApplication {
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api/docs', app, document);
+
+  const redisAdapter = new RedisIoAdapter(app, config.redisUrl);
+  await redisAdapter.connectToRedis();
+  app.useWebSocketAdapter(redisAdapter);
 
   return app;
 }

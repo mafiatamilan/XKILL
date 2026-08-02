@@ -10,7 +10,8 @@ to the next one.
 - [x] 5.2 Student Platform
 - [x] 5.3 College Academic Module
 - [x] 5.4 Placement Preparation
-- [ ] 5.5 / 5.20 DSA Platform (core + extended)
+- [x] 5.5 / 5.20 DSA Platform — 5.5a core solve loop (browse/filter problems, run/submit, Judge0 verdicts via BullMQ queue + Socket.io `submission.verdict` event, editorial, progressive hints, submission history) — 5.5b/c (playlists, contests, ratings) still open
+- [ ] 5.5b DSA Platform — playlists, sheets, progress tracking, analytics
 - [ ] 5.6 AI Interview Engine
 - [ ] 5.7 AI Career Coach
 - [ ] 5.8 Resume Builder & ATS
@@ -53,7 +54,8 @@ to the next one.
 | 5.2 Student Platform | 99 | 24 | — (module-level: students 100% funcs, repo 100%, readiness 100%) |
 | 5.3 College Academic Module | 183 | 33 | — (module-level 96.83 / 81.93 / 98.23 / 96.66; faculty service 100%, repo 97.7 / 82.5 / 97.18 / 97.64, calculators 100% funcs) |
 | 5.4 Placement Preparation (incl. shared AiService) | 61 | 13 | — (full-suite stmts/branch/funcs/lines 96.24 / 84.41 / 92.8 / 96.11) |
-| **Full suite (cumulative)** | **530** | **134** | **96.24 / 84.41 / 92.8 / 96.11** |
+| 5.5a DSA Platform core (incl. JudgeService, BullMQ worker, Socket.io gateway) | 49 | 18 | — (dsa 95 / 72.09 / 88.7 / 94.55; judge 91.89 / 71.05 / 100 / 90.9) |
+| **Full suite (cumulative)** | **590** | **152** | **94.91 / 82.49 / 91.51 / 94.74** |
 
 Coverage gates (global thresholds in package.json): statements ≥85, branches ≥80, functions ≥85, lines ≥85.
 
@@ -76,4 +78,9 @@ consistent with earlier ones.
 | 2026-08-02 | 5.4 AI auth/credential model | `OPENCODE_API_KEY` (Bearer) — currently empty in `.env`; user will supply it when needed. Base URL default `https://opencode.ai/zen/v1/responses`. No basic-auth username/password anymore. |
 | 2026-08-02 | 5.4 How do the placement readiness prediction and 5.2 ReadinessScore relate? | The prediction **extends** the 5.2 scorer — `calculateReadinessScore` (5.2) stays the single source of truth for the base score; placement adds roadmap progress + target-company count on top: composite = 70% readiness + 30% progress, ×0.9 penalty when no target companies, levels high≥75 / medium≥50 / low, monthsToReady 1/3/6. |
 | 2026-08-02 | 5.4 How should the AI-dependent study planner be tested? | Mock the AI client everywhere (jest `moduleNameMapper`-free — plain mocked `fetch` in unit specs, `FakeAiService` overriding `AiService` in e2e). No real server in CI. `AiService.generateStructured` retries once on malformed/invalid responses, then throws a clean `AiServiceError`; upstream HTTP errors propagate immediately. |
+| 2026-08-02 | 5.5a 5.28a was specified as "extend JudgeService" — but no JudgeService/BullMQ/Socket.io gateway existed in the repo and Judge0 wasn't in docker-compose. | 5.28a never actually landed. Built the shared judge layer from scratch inside 5.5a: `JudgeService` (single-run + batch multi-case grading with aggregated verdict & first-failing-case detail), BullMQ `dsa-submissions` queue + `WorkerHost` processor, and a Redis-adapter Socket.io gateway (`user:{id}` rooms) that 5.9/5.10/5.28 reuse. |
+| 2026-08-02 | 5.5a Judge0 verdict mapping — self-hosted CE has no dedicated MLE status. | Mapped 3→accepted, 4→wrong_answer, 5→time_limit_exceeded, 6→compilation_error, 7–14→runtime_error, 15→memory_limit_exceeded. Non-Judge0 grading errors surface as submission status `failed` with `errorMessage` + a failed WS event. |
+| 2026-08-02 | 5.5a Progressive hint unlock semantics | Hint 1 is always unlocked; a user may only unlock hint N after hint N−1 is already unlocked (`HINT_LOCKED` 404 otherwise). `getHints` returns `content: null` + `isUnlocked: false` for not-yet-unlocked hints. |
+| 2026-08-02 | 5.5a Solved-state under concurrent submissions | `SolvedProblem` unique `[userId, problemId]` upserted only on Accepted — concurrent double-submission is winner-take-all and never double-counts (e2e asserts exactly 1 row). |
+| 2026-08-02 | 5.5a Socket.io adapter client lifecycle | ioredis v5 auto-connects, so `connectToRedis` must await `ready` (not call `.connect()`), and `RedisIoAdapter.close()` must quit pub/sub after `super.close()` — otherwise the leaked clients hang the Jest e2e process ("did not exit"). |
 | 2026-08-02 | 5.4 Roadmap lazy generation + persistence | `GET /placement/roadmap` generates a personalized 10-week × 7-task roadmap on first access (persisted), reused afterwards; week `tasks` are returned via the seed permission `update:placement-tasks` for completion. |

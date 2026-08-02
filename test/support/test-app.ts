@@ -39,7 +39,7 @@ export async function createTestApp(
   const moduleRef = await builder.compile();
 
   const app = moduleRef.createNestApplication();
-  configureApp(app);
+  await configureApp(app);
   await app.init();
 
   const mailer = app.get(MailService) as FakeMailer;

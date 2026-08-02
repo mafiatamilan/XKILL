@@ -1,0 +1,29 @@
+import { Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bullmq';
+import { AppConfigService } from '../config/app-config.service';
+import { JudgeModule } from '../judge/judge.module';
+import { AuditModule } from '../audit/audit.module';
+import { DsaController } from './dsa.controller';
+import { DsaService } from './dsa.service';
+import { DsaRepository } from './dsa.repository';
+import { DsaSubmissionsProcessor } from './dsa-submissions.processor';
+import { DsaGateway } from './dsa.gateway';
+import { SUBMISSION_QUEUE } from './submission.queue';
+
+@Module({
+  imports: [
+    BullModule.forRootAsync({
+      inject: [AppConfigService],
+      useFactory: (config: AppConfigService) => ({
+        connection: { url: config.get().redisUrl },
+      }),
+    }),
+    BullModule.registerQueue({ name: SUBMISSION_QUEUE }),
+    JudgeModule,
+    AuditModule,
+  ],
+  controllers: [DsaController],
+  providers: [DsaService, DsaRepository, DsaSubmissionsProcessor, DsaGateway],
+  exports: [DsaService],
+})
+export class DsaModule {}

@@ -7,7 +7,7 @@ import { AppConfigService } from './config/app-config.service';
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   app.useLogger(app.get(JsonLoggerService));
-  configureApp(app);
+  await configureApp(app);
   const port = app.get(AppConfigService).get().port;
   await app.listen(port);
   const logger = app.get(JsonLoggerService);

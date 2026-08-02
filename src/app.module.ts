@@ -23,6 +23,8 @@ import { AdminModule } from './admin/admin.module';
 import { StudentsModule } from './students/students.module';
 import { AcademicsModule } from './academics/academics.module';
 import { PlacementModule } from './placement/placement.module';
+import { DsaModule } from './dsa/dsa.module';
+import { JudgeModule } from './judge/judge.module';
 import { HealthModule } from './health/health.module';
 
 @Module({
@@ -52,6 +54,8 @@ import { HealthModule } from './health/health.module';
     StudentsModule,
     AcademicsModule,
     PlacementModule,
+    DsaModule,
+    JudgeModule,
     HealthModule,
   ],
   providers: [

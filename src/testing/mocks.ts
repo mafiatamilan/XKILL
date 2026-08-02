@@ -25,6 +25,8 @@ export function mockConfig(overrides: Partial<AppConfig> = {}): AppConfigService
     mail: { driver: 'console', from: 'noreply@xkill.app', host: '', port: 587, user: '', pass: '' },
     judge0BaseUrl: '',
     judge0AuthToken: '',
+    judge0PollIntervalMs: 250,
+    judge0GradeTimeoutMs: 30000,
     ai: {
       baseUrl: 'https://opencode.ai/zen/v1/responses',
       apiKey: '',

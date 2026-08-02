@@ -38,6 +38,8 @@ export interface AppConfig {
   };
   judge0BaseUrl: string;
   judge0AuthToken: string;
+  judge0PollIntervalMs: number;
+  judge0GradeTimeoutMs: number;
   ai: {
     baseUrl: string;
     apiKey: string;
@@ -92,6 +94,8 @@ export class AppConfigService {
       },
       judge0BaseUrl: this.config.getOrThrow<string>('JUDGE0_BASE_URL'),
       judge0AuthToken: this.config.getOrThrow<string>('JUDGE0_AUTH_TOKEN'),
+      judge0PollIntervalMs: this.config.getOrThrow<number>('JUDGE0_POLL_INTERVAL_MS'),
+      judge0GradeTimeoutMs: this.config.getOrThrow<number>('JUDGE0_GRADE_TIMEOUT_MS'),
       ai: {
         baseUrl: this.config.getOrThrow<string>('OPENCODE_BASE_URL'),
         apiKey: this.config.getOrThrow<string>('OPENCODE_API_KEY'),

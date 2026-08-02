@@ -42,6 +42,8 @@ export default async function globalSetup(): Promise<void> {
     SMTP_FROM: 'noreply@xkill.app',
     JUDGE0_BASE_URL: '',
     JUDGE0_AUTH_TOKEN: '',
+    JUDGE0_POLL_INTERVAL_MS: '100',
+    JUDGE0_GRADE_TIMEOUT_MS: '3000',
     OPENCODE_BASE_URL: 'https://opencode.ai/zen/v1/responses',
     OPENCODE_API_KEY: '',
     OPENCODE_PROVIDER: 'opencode',

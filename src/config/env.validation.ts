@@ -38,6 +38,8 @@ const EnvSchema = z.object({
 
   JUDGE0_BASE_URL: z.string().optional().default(''),
   JUDGE0_AUTH_TOKEN: z.string().optional().default(''),
+  JUDGE0_POLL_INTERVAL_MS: z.coerce.number().int().min(50).optional().default(250),
+  JUDGE0_GRADE_TIMEOUT_MS: z.coerce.number().int().min(1000).optional().default(30000),
 
   OPENCODE_BASE_URL: z.string().optional().default('https://opencode.ai/zen/v1/responses'),
   OPENCODE_API_KEY: z.string().optional().default(''),

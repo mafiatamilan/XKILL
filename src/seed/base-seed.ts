@@ -49,6 +49,13 @@ export const SEED_ROLES: Array<{
       'read:placement-daily-challenge',
       'create:placement-study-planner',
       'update:placement-tasks',
+      'read:dsa-problems',
+      'create:dsa-problems',
+      'read:dsa-submissions',
+      'create:dsa-submissions',
+      'read:dsa-editorial',
+      'read:dsa-hints',
+      'create:dsa-hints',
     ],
   },
   {
