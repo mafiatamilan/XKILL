@@ -33,7 +33,7 @@ describe('LoggingInterceptor', () => {
           originalUrl: '/api/v1/health',
           headers,
         }),
-        getResponse: () => ({ statusCode: 200, setHeader: jest.fn() }),
+        getResponse: () => ({ statusCode: 200, setHeader: jest.fn(), headersSent: false }),
       }),
     } as unknown as ExecutionContext;
   }
@@ -43,6 +43,26 @@ describe('LoggingInterceptor', () => {
     const ctx = makeContext({ 'x-request-id': 'req-123' });
     await firstValueFrom(interceptor.intercept(ctx, next as any));
     expect(logger.log).toHaveBeenCalledWith('GET /api/v1/health', 'HTTP', expect.any(Object));
+  });
+
+  it('does not set x-request-id after the response has already been sent', async () => {
+    const setHeader = jest.fn();
+    const response = { statusCode: 200, setHeader, headersSent: true };
+    const ctx = {
+      switchToHttp: () => ({
+        getRequest: () => ({
+          method: 'GET',
+          url: '/api/v1/health',
+          originalUrl: '/api/v1/health',
+          headers: {},
+        }),
+        getResponse: () => response,
+      }),
+    } as unknown as ExecutionContext;
+    const next = { handle: () => of('result') };
+    await firstValueFrom(interceptor.intercept(ctx, next as any));
+    expect(setHeader).not.toHaveBeenCalled();
+    expect(logger.log).toHaveBeenCalled();
   });
 
   it('logs errors with their status', async () => {

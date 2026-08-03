@@ -65,6 +65,7 @@ model User {
   salaryPredictions       SalaryPrediction[]
   skillGaps               SkillGap[]
   careerChatMessages      CareerChatMessage[]
+  resumes                 Resume[]
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
 
@@ -1190,4 +1191,74 @@ model CareerChatMessage {
   createdAt DateTime @default(now())
 
   @@index([userId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// 5.8 — Resume Builder & ATS
+// ---------------------------------------------------------------------------
+
+model ResumeTemplate {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String
+  isActive    Boolean  @default(true)
+  style       Json // declarative layout: fonts, colors, spacing
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  resumes Resume[]
+
+  @@index([isActive])
+}
+
+model Resume {
+  id          String           @id @default(cuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  templateId  String
+  template    ResumeTemplate   @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  content     Json // structured resume content (contact, sections, etc.)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  versions ResumeVersion[]
+  analyses AtsAnalysis[]
+
+  @@index([userId])
+  @@index([templateId])
+  @@index([updatedAt])
+}
+
+model ResumeVersion {
+  id        String   @id @default(cuid())
+  resumeId  String
+  resume    Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  version   Int // 1-based, monotonically increasing per resume
+  title     String
+  templateId String
+  content   Json
+  createdAt DateTime @default(now())
+
+  @@unique([resumeId, version])
+  @@index([resumeId])
+}
+
+model AtsAnalysis {
+  id               String   @id @default(cuid())
+  resumeId         String   @unique
+  resume           Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  score            Int // 0-100 deterministic
+  sectionScores    Json // per-section present/missing + points
+  missingSections  String[]
+  atsIssues        Json // detected ATS-hostile elements
+  textDensity      String? // sparse | good | dense
+  keywordOverlap   Json? // when a job description was supplied
+  suggestions      Json?
+  suggestionsStatus String @default("none") // none | ready | failed
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([resumeId])
 }

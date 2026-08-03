@@ -6,6 +6,9 @@
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   },
+  "moduleNameMapper": {
+    "^@react-pdf/renderer$": "<rootDir>/support/fake-react-pdf.ts"
+  },
   "setupFiles": ["<rootDir>/load-env.ts"],
   "globalSetup": "<rootDir>/global-setup.ts",
   "globalTeardown": "<rootDir>/global-teardown.ts",

@@ -3,6 +3,7 @@ import * as bcrypt from 'bcryptjs';
 import { config } from 'dotenv';
 import { seedRolesAndPermissions } from '../src/seed/base-seed';
 import { seedDsaCatalog } from '../src/seed/dsa-catalog.seed';
+import { seedResumeTemplates } from '../src/seed/resume-templates.seed';
 
 config();
 
@@ -45,6 +46,7 @@ async function main(): Promise<void> {
   });
 
   await seedDsaCatalog(prisma);
+  await seedResumeTemplates(prisma);
 
   console.log('Seed complete. Admin:', adminEmail, '| Demo student:', studentEmail);
 }
