@@ -60,6 +60,11 @@ model User {
   ratingHistory           CodingRatingHistory[]    @relation("CodingRatingHistoryUser")
   antiCheatEvents         AntiCheatEvent[]         @relation("AntiCheatUser")
   interviewSessions       InterviewSession[]
+  careerRoadmapItems      CareerRoadmapItem[]
+  learningRecommendations LearningRecommendation[]
+  salaryPredictions       SalaryPrediction[]
+  skillGaps               SkillGap[]
+  careerChatMessages      CareerChatMessage[]
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
 
@@ -246,6 +251,8 @@ model CareerGoal {
   notes              String?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
+
+  careerRoadmapItems CareerRoadmapItem[]
 
   @@index([userId])
   @@index([status])
@@ -1098,4 +1105,89 @@ model InterviewReport {
   generatedAt  DateTime         @default(now())
 
   @@index([sessionId])
+}
+
+// ---------------------------------------------------------------------------
+// 5.7 — AI Career Coach
+// ---------------------------------------------------------------------------
+
+model CareerRoadmapItem {
+  id           String      @id @default(cuid())
+  userId       String
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  careerGoalId String?
+  careerGoal   CareerGoal? @relation(fields: [careerGoalId], references: [id], onDelete: SetNull)
+  phase        Int // 1-based ordering of the long-horizon trajectory
+  title        String
+  duration     String // e.g. "0-3 months"
+  summary      String
+  focus        String[]
+  milestones   String[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([careerGoalId])
+  @@unique([userId, phase])
+}
+
+model LearningRecommendation {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill        String
+  title        String
+  resourceType String // course | article | practice | book
+  provider     String?
+  url          String?
+  priority     Int      @default(1)
+  reason       String?
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([skill])
+}
+
+model SalaryPrediction {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetRole     String
+  targetCompany  String?
+  currency       String   @default("INR")
+  baseLakhs      Float
+  totalCtcLakhs  Float
+  rangeLowLakhs  Float
+  rangeHighLakhs Float
+  confidence     Int // 0-100
+  isEstimate     Boolean  @default(true)
+  factors        Json?
+  generatedAt    DateTime @default(now())
+
+  @@index([userId])
+}
+
+model SkillGap {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetRole String
+  missing    String[]
+  present    String[]
+  coverage   Float // 0..1 — present / target
+  assessedAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([targetRole])
+}
+
+model CareerChatMessage {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String // user | assistant
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }

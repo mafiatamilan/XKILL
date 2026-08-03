@@ -26,6 +26,7 @@ import { PlacementModule } from './placement/placement.module';
 import { DsaModule } from './dsa/dsa.module';
 import { JudgeModule } from './judge/judge.module';
 import { InterviewsModule } from './interviews/interview.module';
+import { CareerCoachModule } from './career-coach/career-coach.module';
 import { HealthModule } from './health/health.module';
 
 @Module({
@@ -58,6 +59,7 @@ import { HealthModule } from './health/health.module';
     DsaModule,
     JudgeModule,
     InterviewsModule,
+    CareerCoachModule,
     HealthModule,
   ],
   providers: [

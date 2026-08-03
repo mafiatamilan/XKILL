@@ -75,6 +75,12 @@ export const SEED_ROLES: Array<{
       'create:interviews',
       'read:interviews',
       'read:interview-reports',
+      'read:career-coach-roadmap',
+      'read:career-coach-recommendations',
+      'read:career-coach-salary',
+      'read:career-coach-skill-gap',
+      'create:career-coach-chat',
+      'read:career-coach-chat',
     ],
   },
   {
