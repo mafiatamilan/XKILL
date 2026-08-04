@@ -28,6 +28,7 @@ import { JudgeModule } from './judge/judge.module';
 import { InterviewsModule } from './interviews/interview.module';
 import { CareerCoachModule } from './career-coach/career-coach.module';
 import { ResumesModule } from './resumes/resume.module';
+import { BattlesModule } from './battles/battles.module';
 import { HealthModule } from './health/health.module';
 
 @Module({
@@ -62,6 +63,7 @@ import { HealthModule } from './health/health.module';
     InterviewsModule,
     CareerCoachModule,
     ResumesModule,
+    BattlesModule,
     HealthModule,
   ],
   providers: [

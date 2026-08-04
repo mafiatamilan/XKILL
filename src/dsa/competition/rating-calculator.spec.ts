@@ -146,4 +146,68 @@ describe('rating-calculator', () => {
       expect(ratingTier(3000)).toBe('Legendary');
     });
   });
+
+  describe('computeRatingUpdate — battle context (1v1)', () => {
+    it('winner gains rating vs same-rated opponent', () => {
+      const result = computeRatingUpdate({
+        currentRating: 1200,
+        contestsParticipated: 0,
+        userRank: 1,
+        opponentRatings: [1200],
+      });
+      expect(result.delta).toBe(20);
+      expect(result.newRating).toBe(1220);
+    });
+
+    it('loser loses symmetric rating vs same-rated opponent', () => {
+      const result = computeRatingUpdate({
+        currentRating: 1200,
+        contestsParticipated: 0,
+        userRank: 2,
+        opponentRatings: [1200],
+      });
+      expect(result.delta).toBe(-20);
+      expect(result.newRating).toBe(1180);
+    });
+
+    it('draw yields near-zero delta for equal ratings', () => {
+      const result = computeRatingUpdate({
+        currentRating: 1200,
+        contestsParticipated: 5,
+        userRank: 1.5,
+        opponentRatings: [1200],
+      });
+      // S = (2-1.5)/(2-1) = 0.5, E = 0.5 → delta = 0
+      expect(result.delta).toBe(0);
+      expect(result.newRating).toBe(1200);
+    });
+
+    it('weaker player beating stronger gains more than standard', () => {
+      const result = computeRatingUpdate({
+        currentRating: 1000,
+        contestsParticipated: 5,
+        userRank: 1,
+        opponentRatings: [1400],
+      });
+      expect(result.delta).toBeGreaterThan(30);
+    });
+
+    it('draw with unequal ratings slightly benefits weaker player', () => {
+      const weak = computeRatingUpdate({
+        currentRating: 1000,
+        contestsParticipated: 5,
+        userRank: 1.5,
+        opponentRatings: [1400],
+      });
+      const strong = computeRatingUpdate({
+        currentRating: 1400,
+        contestsParticipated: 5,
+        userRank: 1.5,
+        opponentRatings: [1000],
+      });
+      // Weaker player gains, stronger player loses on a draw
+      expect(weak.delta).toBeGreaterThan(0);
+      expect(strong.delta).toBeLessThan(0);
+    });
+  });
 });

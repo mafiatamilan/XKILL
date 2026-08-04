@@ -59,6 +59,9 @@ model User {
   codingRating            CodingRating?            @relation("CodingRatingUser")
   ratingHistory           CodingRatingHistory[]    @relation("CodingRatingHistoryUser")
   antiCheatEvents         AntiCheatEvent[]         @relation("AntiCheatUser")
+  battleWinner            Battle[]                 @relation("BattleWinner")
+  battleCreator           Battle[]                 @relation("BattleCreator")
+  battleParticipations    BattleParticipant[]      @relation("BattleParticipantUser")
   interviewSessions       InterviewSession[]
   careerRoadmapItems      CareerRoadmapItem[]
   learningRecommendations LearningRecommendation[]
@@ -699,6 +702,7 @@ model Problem {
   discussions       Discussion[]
   contestEntries    ContestProblem[]
   interviewSessions InterviewSession[]
+  battles           Battle[]
 
   @@index([difficulty])
   @@index([isActive])
@@ -751,6 +755,8 @@ model Submission {
   problem           Problem   @relation(fields: [problemId], references: [id], onDelete: Cascade)
   contestId         String?
   contest           Contest?  @relation(fields: [contestId], references: [id])
+  battleId          String?
+  battle            Battle?   @relation(fields: [battleId], references: [id])
   languageId        Int
   sourceCode        String    @db.Text
   status            String    @default("queued") // queued | running | completed | failed
@@ -772,6 +778,7 @@ model Submission {
   @@index([problemId])
   @@index([userId, problemId])
   @@index([contestId])
+  @@index([battleId])
   @@index([status])
   @@index([verdict])
   @@index([submittedAt])
@@ -1006,8 +1013,11 @@ model CodingRatingHistory {
   codingRating   CodingRating @relation(fields: [codingRatingId], references: [id], onDelete: Cascade)
   userId         String
   user           User         @relation("CodingRatingHistoryUser", fields: [userId], references: [id], onDelete: Cascade)
+  source         String       @default("contest") // contest | battle
   contestId      String?
   contestName    String?
+  battleId       String?
+  battle         Battle?      @relation(fields: [battleId], references: [id])
   rank           Int
   ratingBefore   Int
   ratingAfter    Int
@@ -1016,6 +1026,59 @@ model CodingRatingHistory {
 
   @@index([userId])
   @@index([codingRatingId])
+  @@index([battleId])
+}
+
+// ---------------------------------------------------------------------------
+// 5.9 — Coding Battles
+
+model Battle {
+  id              String                @id @default(cuid())
+  type            String // ranked | practice | private
+  status          String                @default("active") // pending | active | finished | cancelled
+  problemId       String
+  problem         Problem               @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  durationSeconds Int                   @default(900)
+  startedAt       DateTime?
+  endsAt          DateTime?
+  finishedAt      DateTime?
+  winnerId        String?
+  winner          User?                 @relation("BattleWinner", fields: [winnerId], references: [id])
+  ratingAppliedAt DateTime?
+  inviteCode      String?               @unique
+  createdById     String?
+  createdBy       User?                 @relation("BattleCreator", fields: [createdById], references: [id])
+  participants    BattleParticipant[]
+  submissions     Submission[]
+  ratingHistory   CodingRatingHistory[]
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  @@index([status])
+  @@index([type])
+  @@index([endsAt])
+  @@index([inviteCode])
+  @@index([createdById])
+}
+
+model BattleParticipant {
+  id             String    @id @default(cuid())
+  battleId       String
+  battle         Battle    @relation(fields: [battleId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User      @relation("BattleParticipantUser", fields: [userId], references: [id], onDelete: Cascade)
+  score          Int       @default(0)
+  penaltySeconds Int       @default(0)
+  rank           Int?
+  ratingBefore   Int?
+  ratingAfter    Int?
+  ratingDelta    Int?
+  solvedAt       DateTime?
+  joinedAt       DateTime  @default(now())
+
+  @@unique([battleId, userId])
+  @@index([userId])
+  @@index([battleId, score])
 }
 
 model AntiCheatEvent {
@@ -1127,9 +1190,9 @@ model CareerRoadmapItem {
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
+  @@unique([userId, phase])
   @@index([userId])
   @@index([careerGoalId])
-  @@unique([userId, phase])
 }
 
 model LearningRecommendation {
@@ -1213,15 +1276,15 @@ model ResumeTemplate {
 }
 
 model Resume {
-  id          String           @id @default(cuid())
-  userId      String
-  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title       String
-  templateId  String
-  template    ResumeTemplate   @relation(fields: [templateId], references: [id], onDelete: Restrict)
-  content     Json // structured resume content (contact, sections, etc.)
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  id         String         @id @default(cuid())
+  userId     String
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title      String
+  templateId String
+  template   ResumeTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  content    Json // structured resume content (contact, sections, etc.)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
 
   versions ResumeVersion[]
   analyses AtsAnalysis[]
@@ -1232,33 +1295,33 @@ model Resume {
 }
 
 model ResumeVersion {
-  id        String   @id @default(cuid())
-  resumeId  String
-  resume    Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
-  version   Int // 1-based, monotonically increasing per resume
-  title     String
+  id         String   @id @default(cuid())
+  resumeId   String
+  resume     Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  version    Int // 1-based, monotonically increasing per resume
+  title      String
   templateId String
-  content   Json
-  createdAt DateTime @default(now())
+  content    Json
+  createdAt  DateTime @default(now())
 
   @@unique([resumeId, version])
   @@index([resumeId])
 }
 
 model AtsAnalysis {
-  id               String   @id @default(cuid())
-  resumeId         String   @unique
-  resume           Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
-  score            Int // 0-100 deterministic
-  sectionScores    Json // per-section present/missing + points
-  missingSections  String[]
-  atsIssues        Json // detected ATS-hostile elements
-  textDensity      String? // sparse | good | dense
-  keywordOverlap   Json? // when a job description was supplied
-  suggestions      Json?
-  suggestionsStatus String @default("none") // none | ready | failed
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id                String   @id @default(cuid())
+  resumeId          String   @unique
+  resume            Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  score             Int // 0-100 deterministic
+  sectionScores     Json // per-section present/missing + points
+  missingSections   String[]
+  atsIssues         Json // detected ATS-hostile elements
+  textDensity       String? // sparse | good | dense
+  keywordOverlap    Json? // when a job description was supplied
+  suggestions       Json?
+  suggestionsStatus String   @default("none") // none | ready | failed
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   @@index([resumeId])
 }

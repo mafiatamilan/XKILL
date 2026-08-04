@@ -8,6 +8,7 @@ import { DsaService } from './dsa.service';
 import { DsaCompeteService } from './dsa-compete.service';
 import { DsaGateway } from './dsa.gateway';
 import { SUBMISSION_QUEUE } from './submission.queue';
+import { BattlesService } from '../battles/battles.service';
 
 describe('DsaService', () => {
   const asAny = (value: unknown): any => value;
@@ -123,6 +124,7 @@ describe('DsaService', () => {
     gateway = { emitVerdict: jest.fn() };
     submissionQueue = { add: jest.fn() };
     compete = { assertSubmittable: jest.fn(), onSubmissionGraded: jest.fn() };
+    const battles = { assertSubmittable: jest.fn(), onSubmissionGraded: jest.fn() };
 
     const module = await Test.createTestingModule({
       providers: [
@@ -132,6 +134,7 @@ describe('DsaService', () => {
         { provide: AuditService, useValue: audit },
         { provide: DsaGateway, useValue: gateway },
         { provide: DsaCompeteService, useValue: compete },
+        { provide: BattlesService, useValue: battles },
         { provide: getQueueToken(SUBMISSION_QUEUE), useValue: submissionQueue },
       ],
     }).compile();

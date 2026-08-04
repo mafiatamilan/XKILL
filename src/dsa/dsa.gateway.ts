@@ -73,6 +73,11 @@ export class DsaGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.to(this.room(userId)).emit('submission.verdict', event);
   }
 
+  /** Emit an arbitrary event to every socket owned by the user (reused by battles). */
+  emitToUser(userId: string, event: string, payload: unknown): void {
+    this.server.to(this.room(userId)).emit(event, payload);
+  }
+
   private room(userId: string): string {
     return `${USER_ROOM_PREFIX}:${userId}`;
   }

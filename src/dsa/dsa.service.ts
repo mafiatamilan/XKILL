@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { AuditService } from '../audit/audit.service';
@@ -8,6 +8,7 @@ import { DsaCompeteService } from './dsa-compete.service';
 import { DsaGateway } from './dsa.gateway';
 import { SUBMISSION_QUEUE, SubmissionJobData } from './submission.queue';
 import { buildPaginationMeta } from '../common/pagination/pagination.dto';
+import { BattlesService } from '../battles/battles.service';
 
 export interface RunCodeInput {
   sourceCode: string;
@@ -19,6 +20,7 @@ export interface SubmitCodeInput {
   sourceCode: string;
   languageId: number;
   contestId?: string;
+  battleId?: string;
 }
 
 @Injectable()
@@ -29,6 +31,8 @@ export class DsaService {
     private readonly audit: AuditService,
     private readonly gateway: DsaGateway,
     private readonly compete: DsaCompeteService,
+    @Inject(forwardRef(() => BattlesService))
+    private readonly battles: BattlesService | undefined,
     @InjectQueue(SUBMISSION_QUEUE) private readonly submissionQueue: Queue<SubmissionJobData>,
   ) {}
 
@@ -94,12 +98,16 @@ export class DsaService {
     if (input.contestId) {
       await this.compete.assertSubmittable(userId, input.contestId, problemId);
     }
+    if (input.battleId && this.battles) {
+      await this.battles.assertSubmittable(userId, input.battleId, problemId);
+    }
     const submission = await this.repository.createSubmission({
       userId,
       problemId,
       languageId: input.languageId,
       sourceCode: input.sourceCode,
       contestId: input.contestId,
+      battleId: input.battleId,
     });
     await this.submissionQueue.add(
       'grade',
@@ -280,6 +288,17 @@ export class DsaService {
         verdict: result.verdict,
         completedAt,
       });
+
+      if (this.battles) {
+        await this.battles.onSubmissionGraded({
+          id: submission.id,
+          userId: submission.userId,
+          battleId: submission.battleId,
+          problemId: submission.problemId,
+          verdict: result.verdict,
+          completedAt,
+        });
+      }
 
       await this.audit.record({
         userId: submission.userId,

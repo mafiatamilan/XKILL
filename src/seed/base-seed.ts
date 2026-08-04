@@ -90,6 +90,13 @@ export const SEED_ROLES: Array<{
       'read:resume-ats',
       'read:resume-versions',
       'create:resume-versions',
+      'create:battle-queue',
+      'delete:battle-queue',
+      'create:battles',
+      'read:battles',
+      'create:battle-submissions',
+      'read:battle-ratings',
+      'read:battle-history',
     ],
   },
   {

@@ -1,8 +1,9 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { AppConfigService } from '../config/app-config.service';
 import { JudgeModule } from '../judge/judge.module';
 import { AuditModule } from '../audit/audit.module';
+import { BattlesModule } from '../battles/battles.module';
 import { DsaController } from './dsa.controller';
 import { DsaTrackController } from './dsa-track.controller';
 import { DsaCompeteController } from './dsa-compete.controller';
@@ -27,6 +28,7 @@ import { SUBMISSION_QUEUE } from './submission.queue';
     BullModule.registerQueue({ name: SUBMISSION_QUEUE }),
     JudgeModule,
     AuditModule,
+    forwardRef(() => BattlesModule),
   ],
   controllers: [DsaController, DsaTrackController, DsaCompeteController],
   providers: [
@@ -39,6 +41,6 @@ import { SUBMISSION_QUEUE } from './submission.queue';
     DsaSubmissionsProcessor,
     DsaGateway,
   ],
-  exports: [DsaService],
+  exports: [DsaService, RankingService, DsaGateway, DsaCompeteRepository],
 })
 export class DsaModule {}
