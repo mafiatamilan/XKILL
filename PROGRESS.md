@@ -17,7 +17,7 @@ to the next one.
 - [x] 5.7 AI Career Coach — long-horizon career roadmap (phases over months-years, distinct from 5.4's tactical 10-week executor), learning recommendations, personalized salary prediction (explicitly `isEstimate: true`, confidence + range + factors, revisit vs 5.16 reference data later), deterministic skill-gap analysis vs the target role, and a request/response AI chat assistant with full history persistence + 5.6-style AI-failure resilience — complete
 - [x] 5.8 Resume Builder & ATS — CRUD + seeded templates, snapshot-on-save version history (restore creates a NEW version, never overwrites), deterministic ATS score (`computeAtsScore`: section presence, ATS-hostile elements, text density, job-description keyword overlap) + AI suggestions with graceful degradation (503 `AI_SUGGESTIONS_FAILED`, score still persisted), lightweight `GET /score` + `GET /suggestions` re-reads, on-demand PDF (`@react-pdf/renderer`) + DOCX (`docx`) exports from current or historical content — complete
 - [x] 5.9 Coding Battles — ranked/practice/private 1v1 matches with live WebSocket sync, deterministic matchmaking, Elo ratings, invite-code private battles — complete
-- [ ] 5.10 Leaderboards
+- [x] 5.10 Leaderboards — read-only, Redis sorted-set backed leaderboards (global via `RankingService`, college/department/company/weekly/monthly/nearby-me via raw SQL), pagination, city-scoped nearby-me — complete
 - [ ] 5.11 Gamification
 - [ ] 5.12 Certificates
 - [ ] 5.13 Job Marketplace

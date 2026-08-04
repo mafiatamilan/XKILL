@@ -97,6 +97,7 @@ export const SEED_ROLES: Array<{
       'create:battle-submissions',
       'read:battle-ratings',
       'read:battle-history',
+      'read:leaderboards',
     ],
   },
   {
@@ -119,6 +120,7 @@ export const SEED_ROLES: Array<{
       'delete:dsa-contests',
       'read:dsa-leaderboard',
       'read:dsa-rating',
+      'read:leaderboards',
     ],
   },
   {
@@ -139,6 +141,7 @@ export const SEED_ROLES: Array<{
       'delete:dsa-contests',
       'read:dsa-leaderboard',
       'read:dsa-rating',
+      'read:leaderboards',
     ],
   },
   {
