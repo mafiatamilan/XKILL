@@ -32,6 +32,7 @@ import { BattlesModule } from './battles/battles.module';
 import { LeaderboardsModule } from './leaderboards/leaderboards.module';
 import { GamificationModule } from './gamification/gamification.module';
 import { CertificatesModule } from './certificates/certificates.module';
+import { JobsModule } from './jobs/jobs.module';
 import { HealthModule } from './health/health.module';
 
 @Module({
@@ -70,6 +71,7 @@ import { HealthModule } from './health/health.module';
     LeaderboardsModule,
     GamificationModule,
     CertificatesModule,
+    JobsModule,
     HealthModule,
   ],
   providers: [

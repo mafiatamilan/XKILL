@@ -20,7 +20,7 @@ to the next one.
 - [x] 5.10 Leaderboards — read-only, Redis sorted-set backed leaderboards (global via `RankingService`, college/department/company/weekly/monthly/nearby-me via raw SQL), pagination, city-scoped nearby-me — complete
 - [x] 5.11 Gamification — XP ledger (idempotent), levels, streaks (timezone-aware), badges/achievements, daily rewards, missions, weekly challenges, seasonal events — complete
 - [x] 5.12 Certificates — issue, public verify (no auth), QR, PDF export, renew (1yr extend), LinkedIn share URL, certificate number sequencing, revocation support — complete
-- [ ] 5.13 Job Marketplace
+- [x] 5.13 Job Marketplace — CRUD (recruiter-owned), public search/filters, apply, save/unsave, eligibility check, contact recruiter, company profiles — complete
 - [ ] 5.14 Internship Portal
 - [ ] 5.15 Mentor Marketplace
 - [ ] 5.16 Company Preparation Paths

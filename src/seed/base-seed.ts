@@ -103,6 +103,10 @@ export const SEED_ROLES: Array<{
       'claim:daily-reward',
       'read:certificates',
       'create:certificates',
+      'read:jobs',
+      'create:jobs',
+      'update:jobs',
+      'delete:jobs',
     ],
   },
   {
@@ -155,7 +159,7 @@ export const SEED_ROLES: Array<{
     name: 'recruiter',
     description: 'Company recruiter',
     isSystem: true,
-    permissions: ['read:self'],
+    permissions: ['read:self', 'read:jobs', 'create:jobs', 'update:jobs', 'delete:jobs'],
   },
   {
     name: 'tpo',

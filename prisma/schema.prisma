@@ -74,6 +74,10 @@ model User {
   achievements            Achievement[]
   dailyRewards            DailyReward[]
   certificates            Certificate[]
+  companyProfiles         CompanyProfile[]
+  jobListingsPosted       JobListing[]
+  jobApplications         JobApplication[]
+  savedJobs               SavedJob[]
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
 
@@ -1481,4 +1485,79 @@ model Certificate {
   @@index([userId])
   @@index([certificateNumber])
   @@index([verificationCode])
+}
+
+// ─── 5.13 Job Marketplace ───────────────────────────────────────────
+
+model CompanyProfile {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  website     String?
+  logoUrl     String?
+  industry    String?  // e.g. "Technology", "Finance", "Healthcare"
+  size        String?  // e.g. "1-50", "51-200", "201-500", "500+"
+  location    String?
+  userId      String   // recruiter who manages this profile
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  jobListings JobListing[]
+}
+
+model JobListing {
+  id           String   @id @default(cuid())
+  title        String
+  description  String
+  companyId    String
+  company      CompanyProfile @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  recruiterId  String   // user who posted
+  recruiter    User     @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
+  location     String
+  type         String   // full_time | part_time | internship | contract
+  salaryMin    Int?
+  salaryMax    Int?
+  requirements String[] // e.g. ["B.Tech", "CS/IT", "7+ CGPA"]
+  skills       String[] // e.g. ["React", "Node.js", "TypeScript"]
+  deadline     DateTime
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  applications JobApplication[]
+  savedBy      SavedJob[]
+
+  @@index([companyId])
+  @@index([recruiterId])
+  @@index([isActive])
+  @@index([deadline])
+}
+
+model JobApplication {
+  id          String   @id @default(cuid())
+  jobId       String
+  job         JobListing @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status      String   @default("pending") // pending | reviewed | shortlisted | rejected | accepted
+  coverLetter String?
+  appliedAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([jobId, userId])
+  @@index([userId])
+  @@index([status])
+}
+
+model SavedJob {
+  id      String   @id @default(cuid())
+  jobId   String
+  job     JobListing @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  userId  String
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  savedAt DateTime @default(now())
+
+  @@unique([jobId, userId])
+  @@index([userId])
 }
