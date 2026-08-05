@@ -98,6 +98,9 @@ export const SEED_ROLES: Array<{
       'read:battle-ratings',
       'read:battle-history',
       'read:leaderboards',
+      'read:gamification',
+      'create:gamification',
+      'claim:daily-reward',
     ],
   },
   {

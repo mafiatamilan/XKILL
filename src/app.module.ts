@@ -30,6 +30,7 @@ import { CareerCoachModule } from './career-coach/career-coach.module';
 import { ResumesModule } from './resumes/resume.module';
 import { BattlesModule } from './battles/battles.module';
 import { LeaderboardsModule } from './leaderboards/leaderboards.module';
+import { GamificationModule } from './gamification/gamification.module';
 import { HealthModule } from './health/health.module';
 
 @Module({
@@ -66,6 +67,7 @@ import { HealthModule } from './health/health.module';
     ResumesModule,
     BattlesModule,
     LeaderboardsModule,
+    GamificationModule,
     HealthModule,
   ],
   providers: [

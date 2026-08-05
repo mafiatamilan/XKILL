@@ -69,6 +69,10 @@ model User {
   skillGaps               SkillGap[]
   careerChatMessages      CareerChatMessage[]
   resumes                 Resume[]
+  xpLedger                XpLedger[]
+  streak                  Streak?
+  achievements            Achievement[]
+  dailyRewards            DailyReward[]
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
 
@@ -1324,4 +1328,118 @@ model AtsAnalysis {
   updatedAt         DateTime @updatedAt
 
   @@index([resumeId])
+}
+
+// ─── 5.11 Gamification ───────────────────────────────────────────────
+
+model XpLedger {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action         String   // e.g. problem_solved, contest_participated, battle_won
+  amount         Int      // XP earned (positive)
+  idempotencyKey String   @unique // prevents double-awarding
+  metadata       Json?    // { problemId?, contestId?, battleId? }
+  createdAt      DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model Level {
+  id     String @id @default(cuid())
+  level  Int    @unique // 1, 2, 3, …
+  minXp  Int    // minimum total XP to reach this level
+  title  String // e.g. "Novice", "Coder", "Master"
+  icon   String?
+
+  @@index([level])
+}
+
+model Streak {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentStreak   Int       @default(0)
+  longestStreak   Int       @default(0)
+  lastActivityDate DateTime? // date in user's timezone
+  timezone        String    @default("UTC")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Badge {
+  id          String        @id @default(cuid())
+  name        String        @unique
+  description String
+  icon        String?       // URL or emoji
+  category    String        // e.g. "coding", "social", "milestone"
+  criteria    Json          // { type: "xp_total", threshold: 1000 } or { type: "streak", days: 30 }
+  achievements Achievement[]
+  createdAt   DateTime      @default(now())
+}
+
+model Achievement {
+  id       String   @id @default(cuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeId  String
+  badge    Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  earnedAt DateTime @default(now())
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+}
+
+model DailyReward {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  day       Int      // day number in streak (1 = first day, 7 = max daily reward)
+  xpAwarded Int      // XP granted for this day
+  claimedAt DateTime @default(now())
+
+  @@unique([userId, day])
+  @@index([userId])
+}
+
+model Mission {
+  id          String    @id @default(cuid())
+  title       String
+  description String
+  xpReward    Int
+  type        String    @default("daily") // daily | one_time
+  criteria    Json      // { type: "solve_problems", count: 3, difficulty?: "easy" }
+  isActive    Boolean   @default(true)
+  startsAt    DateTime?
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+model WeeklyChallenge {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  xpReward    Int
+  weekStart   DateTime // Monday 00:00 UTC
+  weekEnd     DateTime // Sunday 23:59 UTC
+  criteria    Json     // { type: "earn_xp", amount: 500 } or { type: "solve_problems", count: 10 }
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@index([weekStart, weekEnd])
+}
+
+model SeasonalEvent {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean  @default(true)
+  metadata    Json?    // { theme, bonusMultiplier, exclusiveRewards }
+  createdAt   DateTime @default(now())
+
+  @@index([startDate, endDate])
 }

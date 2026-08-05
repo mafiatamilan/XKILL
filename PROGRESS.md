@@ -18,7 +18,7 @@ to the next one.
 - [x] 5.8 Resume Builder & ATS — CRUD + seeded templates, snapshot-on-save version history (restore creates a NEW version, never overwrites), deterministic ATS score (`computeAtsScore`: section presence, ATS-hostile elements, text density, job-description keyword overlap) + AI suggestions with graceful degradation (503 `AI_SUGGESTIONS_FAILED`, score still persisted), lightweight `GET /score` + `GET /suggestions` re-reads, on-demand PDF (`@react-pdf/renderer`) + DOCX (`docx`) exports from current or historical content — complete
 - [x] 5.9 Coding Battles — ranked/practice/private 1v1 matches with live WebSocket sync, deterministic matchmaking, Elo ratings, invite-code private battles — complete
 - [x] 5.10 Leaderboards — read-only, Redis sorted-set backed leaderboards (global via `RankingService`, college/department/company/weekly/monthly/nearby-me via raw SQL), pagination, city-scoped nearby-me — complete
-- [ ] 5.11 Gamification
+- [x] 5.11 Gamification — XP ledger (idempotent), levels, streaks (timezone-aware), badges/achievements, daily rewards, missions, weekly challenges, seasonal events — complete
 - [ ] 5.12 Certificates
 - [ ] 5.13 Job Marketplace
 - [ ] 5.14 Internship Portal
