@@ -73,6 +73,7 @@ model User {
   streak                  Streak?
   achievements            Achievement[]
   dailyRewards            DailyReward[]
+  certificates            Certificate[]
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
 
@@ -1442,4 +1443,42 @@ model SeasonalEvent {
   createdAt   DateTime @default(now())
 
   @@index([startDate, endDate])
+}
+
+// ─── 5.12 Certificates ──────────────────────────────────────────────
+
+model CertificateTemplate {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  category    String   // course | completion | achievement | participation
+  description String?
+  content     Json     // { title, subtitle, body, signatureLine, logoUrl? }
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  certificates Certificate[]
+}
+
+model Certificate {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  templateId      String
+  template        CertificateTemplate @relation(fields: [templateId], references: [id])
+  certificateNumber String  @unique // human-readable: CERT-2026-XXXXX
+  verificationCode String  @unique // public verify token (uuid-based)
+  title           String   // e.g. "Advanced DSA Completion"
+  issuedAt        DateTime @default(now())
+  expiresAt       DateTime?
+  isRevoked       Boolean  @default(false)
+  revokedAt       DateTime?
+  revokeReason    String?
+  metadata        Json?    // { courseName, completionDate, grade?, hours? }
+  linkedinShareUrl String?
+  createdAt       DateTime @default(now())
+
+  @@index([userId])
+  @@index([certificateNumber])
+  @@index([verificationCode])
 }

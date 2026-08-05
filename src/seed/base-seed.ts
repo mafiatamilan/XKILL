@@ -101,6 +101,8 @@ export const SEED_ROLES: Array<{
       'read:gamification',
       'create:gamification',
       'claim:daily-reward',
+      'read:certificates',
+      'create:certificates',
     ],
   },
   {
@@ -124,6 +126,8 @@ export const SEED_ROLES: Array<{
       'read:dsa-leaderboard',
       'read:dsa-rating',
       'read:leaderboards',
+      'read:certificates',
+      'create:certificates',
     ],
   },
   {

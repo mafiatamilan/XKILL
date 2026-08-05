@@ -19,7 +19,7 @@ to the next one.
 - [x] 5.9 Coding Battles — ranked/practice/private 1v1 matches with live WebSocket sync, deterministic matchmaking, Elo ratings, invite-code private battles — complete
 - [x] 5.10 Leaderboards — read-only, Redis sorted-set backed leaderboards (global via `RankingService`, college/department/company/weekly/monthly/nearby-me via raw SQL), pagination, city-scoped nearby-me — complete
 - [x] 5.11 Gamification — XP ledger (idempotent), levels, streaks (timezone-aware), badges/achievements, daily rewards, missions, weekly challenges, seasonal events — complete
-- [ ] 5.12 Certificates
+- [x] 5.12 Certificates — issue, public verify (no auth), QR, PDF export, renew (1yr extend), LinkedIn share URL, certificate number sequencing, revocation support — complete
 - [ ] 5.13 Job Marketplace
 - [ ] 5.14 Internship Portal
 - [ ] 5.15 Mentor Marketplace
