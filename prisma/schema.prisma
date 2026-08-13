@@ -78,6 +78,9 @@ model User {
   jobListingsPosted       JobListing[]
   jobApplications         JobApplication[]
   savedJobs               SavedJob[]
+  internshipListingsPosted InternshipListing[]
+  internshipApplications  InternshipApplication[]
+  internshipCertificates  InternshipCertificate[]
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
 
@@ -1503,7 +1506,8 @@ model CompanyProfile {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  jobListings JobListing[]
+  jobListings     JobListing[]
+  internshipListings InternshipListing[]
 }
 
 model JobListing {
@@ -1560,4 +1564,67 @@ model SavedJob {
 
   @@unique([jobId, userId])
   @@index([userId])
+}
+
+// ─── 5.14 Internship Portal ─────────────────────────────────────────
+
+model InternshipListing {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  companyId   String
+  company     CompanyProfile @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  recruiterId String
+  recruiter   User     @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
+  location    String
+  type        String   // summer | winter | remote | hybrid
+  duration    String   // e.g. "2 months", "6 months"
+  stipend     Int?     // monthly stipend in INR
+  startDate   DateTime?
+  endDate     DateTime?
+  deadline    DateTime
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  applications    InternshipApplication[]
+  certificates    InternshipCertificate[]
+
+  @@index([companyId])
+  @@index([recruiterId])
+  @@index([isActive])
+  @@index([type])
+}
+
+model InternshipApplication {
+  id           String   @id @default(cuid())
+  internshipId String
+  internship   InternshipListing @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status       String   @default("pending") // pending | reviewed | shortlisted | rejected | accepted | completed
+  coverLetter  String?
+  appliedAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([internshipId, userId])
+  @@index([userId])
+  @@index([status])
+}
+
+model InternshipCertificate {
+  id              String   @id @default(cuid())
+  internshipId    String
+  internship      InternshipListing @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  certificateNumber String  @unique
+  title           String   // e.g. "Internship Completion Certificate"
+  issuedAt        DateTime @default(now())
+  metadata        Json?    // { duration, startDate, endDate, supervisor? }
+  createdAt       DateTime @default(now())
+
+  @@unique([internshipId, userId])
+  @@index([userId])
+  @@index([certificateNumber])
 }

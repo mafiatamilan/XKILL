@@ -33,6 +33,7 @@ import { LeaderboardsModule } from './leaderboards/leaderboards.module';
 import { GamificationModule } from './gamification/gamification.module';
 import { CertificatesModule } from './certificates/certificates.module';
 import { JobsModule } from './jobs/jobs.module';
+import { InternshipsModule } from './internships/internships.module';
 import { HealthModule } from './health/health.module';
 
 @Module({
@@ -72,6 +73,7 @@ import { HealthModule } from './health/health.module';
     GamificationModule,
     CertificatesModule,
     JobsModule,
+    InternshipsModule,
     HealthModule,
   ],
   providers: [

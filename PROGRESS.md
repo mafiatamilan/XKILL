@@ -21,7 +21,7 @@ to the next one.
 - [x] 5.11 Gamification — XP ledger (idempotent), levels, streaks (timezone-aware), badges/achievements, daily rewards, missions, weekly challenges, seasonal events — complete
 - [x] 5.12 Certificates — issue, public verify (no auth), QR, PDF export, renew (1yr extend), LinkedIn share URL, certificate number sequencing, revocation support — complete
 - [x] 5.13 Job Marketplace — CRUD (recruiter-owned), public search/filters, apply, save/unsave, eligibility check, contact recruiter, company profiles — complete
-- [ ] 5.14 Internship Portal
+- [x] 5.14 Internship Portal — CRUD (recruiter-owned), public search/filter (summer/winter/remote/hybrid), apply, certificate issuance, company profiles — complete
 - [ ] 5.15 Mentor Marketplace
 - [ ] 5.16 Company Preparation Paths
 - [ ] 5.17 Recruiter Portal
