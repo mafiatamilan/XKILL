@@ -111,6 +111,11 @@ export const SEED_ROLES: Array<{
       'create:internships',
       'update:internships',
       'delete:internships',
+      'read:mentors',
+      'create:mentors',
+      'update:mentors',
+      'read:bookings',
+      'create:bookings',
     ],
   },
   {
@@ -136,6 +141,10 @@ export const SEED_ROLES: Array<{
       'read:leaderboards',
       'read:certificates',
       'create:certificates',
+      'read:mentors',
+      'create:mentors',
+      'update:mentors',
+      'manage:bookings',
     ],
   },
   {

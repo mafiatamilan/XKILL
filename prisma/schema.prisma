@@ -81,6 +81,9 @@ model User {
   internshipListingsPosted InternshipListing[]
   internshipApplications  InternshipApplication[]
   internshipCertificates  InternshipCertificate[]
+  mentorProfile            MentorProfile?
+  mentorBookings          Booking[]         @relation("StudentBookings")
+  mentorReviews           Review[]          @relation("StudentReviews")
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
 
@@ -1627,4 +1630,89 @@ model InternshipCertificate {
   @@unique([internshipId, userId])
   @@index([userId])
   @@index([certificateNumber])
+}
+
+// ─── 5.15 Mentor Marketplace ────────────────────────────────────────
+
+model MentorProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  headline    String   // e.g. "Senior SDE at Google"
+  bio         String?
+  expertise   String[] // ["system-design", "dsa", "react", "interview-prep"]
+  hourlyRate  Int      // in INR
+  rating      Float    @default(0)
+  totalReviews Int     @default(0)
+  isAvailable Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  availability  MentorAvailability[]
+  bookings      Booking[]
+  reviews       Review[]
+}
+
+model MentorAvailability {
+  id         String   @id @default(cuid())
+  mentorId   String
+  mentor     MentorProfile @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+  dayOfWeek  Int      // 0=Sunday, 1=Monday, ..., 6=Saturday
+  startTime  String   // "09:00"
+  endTime    String   // "17:00"
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  @@unique([mentorId, dayOfWeek, startTime])
+  @@index([mentorId])
+}
+
+model Booking {
+  id            String   @id @default(cuid())
+  mentorId      String
+  mentor        MentorProfile @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+  studentId     String
+  student       User     @relation("StudentBookings", fields: [studentId], references: [id], onDelete: Cascade)
+  scheduledDate DateTime
+  startTime     String   // "10:00"
+  endTime       String   // "11:00"
+  status        String   @default("pending") // pending | confirmed | completed | cancelled | no_show
+  topic         String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  payment  MentorPayment?
+  review   Review?
+
+  @@unique([mentorId, scheduledDate, startTime])
+  @@index([mentorId])
+  @@index([studentId])
+  @@index([status])
+}
+
+model MentorPayment {
+  id         String   @id @default(cuid())
+  bookingId  String   @unique
+  booking    Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  amount     Int      // in INR
+  status     String   @default("pending") // pending | completed | refunded
+  paidAt     DateTime?
+  createdAt  DateTime @default(now())
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  bookingId  String   @unique
+  booking    Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  mentorId   String
+  mentor     MentorProfile @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+  studentId  String
+  student    User     @relation("StudentReviews", fields: [studentId], references: [id], onDelete: Cascade)
+  rating     Int      // 1-5
+  comment    String?
+  createdAt  DateTime @default(now())
+
+  @@index([mentorId])
+  @@index([studentId])
 }

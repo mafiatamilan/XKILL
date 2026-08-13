@@ -22,7 +22,7 @@ to the next one.
 - [x] 5.12 Certificates — issue, public verify (no auth), QR, PDF export, renew (1yr extend), LinkedIn share URL, certificate number sequencing, revocation support — complete
 - [x] 5.13 Job Marketplace — CRUD (recruiter-owned), public search/filters, apply, save/unsave, eligibility check, contact recruiter, company profiles — complete
 - [x] 5.14 Internship Portal — CRUD (recruiter-owned), public search/filter (summer/winter/remote/hybrid), apply, certificate issuance, company profiles — complete
-- [ ] 5.15 Mentor Marketplace
+- [x] 5.15 Mentor Marketplace — Mentor profiles (faculty/student-owned), availability management, booking with double-booking prevention ($transaction), payment, review, complete flow — complete
 - [ ] 5.16 Company Preparation Paths
 - [ ] 5.17 Recruiter Portal
 - [ ] 5.18 TPO Portal
