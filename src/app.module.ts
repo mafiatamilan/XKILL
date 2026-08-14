@@ -36,6 +36,7 @@ import { JobsModule } from './jobs/jobs.module';
 import { InternshipsModule } from './internships/internships.module';
 import { MentorsModule } from './mentors/mentors.module';
 import { CompanyPrepModule } from './company-prep/company-prep.module';
+import { RecruiterModule } from './recruiter/recruiter.module';
 import { HealthModule } from './health/health.module';
 
 @Module({
@@ -78,6 +79,7 @@ import { HealthModule } from './health/health.module';
     InternshipsModule,
     MentorsModule,
     CompanyPrepModule,
+    RecruiterModule,
     HealthModule,
   ],
   providers: [

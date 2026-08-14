@@ -184,6 +184,11 @@ export const SEED_ROLES: Array<{
       'create:internships',
       'update:internships',
       'delete:internships',
+      'manage:recruiter',
+      'read:candidates',
+      'manage:shortlist',
+      'manage:interviews',
+      'read:recruiter-analytics',
     ],
   },
   {

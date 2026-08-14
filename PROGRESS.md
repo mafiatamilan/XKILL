@@ -13,7 +13,6 @@ to the next one.
 - [x] 5.5 / 5.20 DSA Platform — 5.5a core solve loop (browse/filter problems, run/submit, Judge0 verdicts via BullMQ queue + Socket.io `submission.verdict` event, editorial, progressive hints, submission history) + 5.5b (playlists, sheets, progress, analytics, visibility, discussion) + 5.5c (contests, Elo ratings, live leaderboards, anti-cheat ingestion) — complete
 - [x] 5.6 AI Interview Engine — multi-turn mock interviews (hr/technical/dsa/system-design), AI opening question + per-turn next question/feedback, state machine (created→in_progress→ended), fresh-AI transcript summarization with truncation, dsa-type turns graded by the real JudgeService against the catalog problem, technical-type context from SkillProfile, text-only mode with explicit 501 for voice/video — complete
 - [x] 5.5b DSA Platform — playlists (private/shared, 404-no-existence-leak), curated sheets (Blind 75, Grind 169, NeetCode 150, Google, Amazon) seeded from a real problem catalog, live progress/analytics computed from Submission rows (accuracy, heatmap, weak/strong topics, runtime, rating-trend placeholder), recruiter visibility settings behind the pure `filterVisibleFields` predicate, per-problem discussion with idempotent upvotes
-- [ ] 5.6 AI Interview Engine
 - [x] 5.7 AI Career Coach — long-horizon career roadmap (phases over months-years, distinct from 5.4's tactical 10-week executor), learning recommendations, personalized salary prediction (explicitly `isEstimate: true`, confidence + range + factors, revisit vs 5.16 reference data later), deterministic skill-gap analysis vs the target role, and a request/response AI chat assistant with full history persistence + 5.6-style AI-failure resilience — complete
 - [x] 5.8 Resume Builder & ATS — CRUD + seeded templates, snapshot-on-save version history (restore creates a NEW version, never overwrites), deterministic ATS score (`computeAtsScore`: section presence, ATS-hostile elements, text density, job-description keyword overlap) + AI suggestions with graceful degradation (503 `AI_SUGGESTIONS_FAILED`, score still persisted), lightweight `GET /score` + `GET /suggestions` re-reads, on-demand PDF (`@react-pdf/renderer`) + DOCX (`docx`) exports from current or historical content — complete
 - [x] 5.9 Coding Battles — ranked/practice/private 1v1 matches with live WebSocket sync, deterministic matchmaking, Elo ratings, invite-code private battles — complete
@@ -24,7 +23,7 @@ to the next one.
 - [x] 5.14 Internship Portal — CRUD (recruiter-owned), public search/filter (summer/winter/remote/hybrid), apply, certificate issuance, company profiles — complete
 - [x] 5.15 Mentor Marketplace — Mentor profiles (faculty/student-owned), availability management, booking with double-booking prevention ($transaction), payment, review, complete flow — complete
 - [x] 5.16 Company Preparation Paths — Per-company hiring patterns, interview questions, OA info, salary insights, prep timeline, public prep-path endpoint — complete
-- [ ] 5.16 Company Preparation Paths
+- [x] 5.17 Recruiter Portal — Recruiter profile, candidate search, shortlist, interview scheduling, hiring analytics — complete
 - [ ] 5.17 Recruiter Portal
 - [ ] 5.18 TPO Portal
 - [ ] 5.19 Faculty Portal
