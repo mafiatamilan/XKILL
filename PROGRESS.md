@@ -25,7 +25,7 @@ to the next one.
 - [x] 5.16 Company Preparation Paths — Per-company hiring patterns, interview questions, OA info, salary insights, prep timeline, public prep-path endpoint — complete
 - [x] 5.17 Recruiter Portal — Recruiter profile, candidate search, shortlist, interview scheduling, hiring analytics — complete
 - [x] 5.18 TPO Portal — Company drives, eligibility criteria, offer records, placement reports, department stats, recruiter coordination — complete
-- [ ] 5.18 TPO Portal
+- [x] 5.19 Faculty Portal — Faculty dashboard, subject-wise reports, broadcast notifications to students — complete
 - [ ] 5.19 Faculty Portal
 - [ ] 5.21 Notification & Communication
 - [ ] 5.22 Analytics & Reporting

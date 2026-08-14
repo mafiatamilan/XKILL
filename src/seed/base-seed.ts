@@ -125,6 +125,8 @@ export const SEED_ROLES: Array<{
     isSystem: true,
     permissions: [
       'read:self',
+      'read:faculty',
+      'create:faculty',
       'manage:faculty-subjects',
       'manage:faculty-materials',
       'manage:faculty-attendance',
@@ -146,6 +148,8 @@ export const SEED_ROLES: Array<{
       'create:mentors',
       'update:mentors',
       'manage:bookings',
+      'read:faculty-reports',
+      'manage:faculty-broadcast',
     ],
   },
   {

@@ -38,6 +38,7 @@ import { MentorsModule } from './mentors/mentors.module';
 import { CompanyPrepModule } from './company-prep/company-prep.module';
 import { RecruiterModule } from './recruiter/recruiter.module';
 import { TpoModule } from './tpo/tpo.module';
+import { FacultyPortalModule } from './faculty-portal/faculty-portal.module';
 import { HealthModule } from './health/health.module';
 
 @Module({
@@ -82,6 +83,7 @@ import { HealthModule } from './health/health.module';
     CompanyPrepModule,
     RecruiterModule,
     TpoModule,
+    FacultyPortalModule,
     HealthModule,
   ],
   providers: [
