@@ -35,6 +35,7 @@ import { CertificatesModule } from './certificates/certificates.module';
 import { JobsModule } from './jobs/jobs.module';
 import { InternshipsModule } from './internships/internships.module';
 import { MentorsModule } from './mentors/mentors.module';
+import { CompanyPrepModule } from './company-prep/company-prep.module';
 import { HealthModule } from './health/health.module';
 
 @Module({
@@ -76,6 +77,7 @@ import { HealthModule } from './health/health.module';
     JobsModule,
     InternshipsModule,
     MentorsModule,
+    CompanyPrepModule,
     HealthModule,
   ],
   providers: [

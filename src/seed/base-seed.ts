@@ -116,6 +116,7 @@ export const SEED_ROLES: Array<{
       'update:mentors',
       'read:bookings',
       'create:bookings',
+      'read:company-prep',
     ],
   },
   {
@@ -166,6 +167,7 @@ export const SEED_ROLES: Array<{
       'read:dsa-leaderboard',
       'read:dsa-rating',
       'read:leaderboards',
+      'manage:company-prep',
     ],
   },
   {

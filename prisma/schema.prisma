@@ -1716,3 +1716,120 @@ model Review {
   @@index([mentorId])
   @@index([studentId])
 }
+
+// ---------------------------------------------------------------------------
+// 5.16 — Company Preparation Paths
+// ---------------------------------------------------------------------------
+
+model CompanyPrepPath {
+  id              String   @id @default(cuid())
+  companyName     String   @unique
+  slug            String   @unique
+  logoUrl         String?
+  description     String?
+  website         String?
+  industry        String?
+  headquarters    String?
+  GlassdoorRating Float?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  hiringPatterns  HiringPattern[]
+  interviewQuestions InterviewQuestion[]
+  onlineAssessments OnlineAssessment[]
+  salaryInsights  SalaryInsight[]
+  prepTimelines   PrepTimeline[]
+
+  @@index([slug])
+  @@index([industry])
+}
+
+model HiringPattern {
+  id              String   @id @default(cuid())
+  companyId       String
+  company         CompanyPrepPath @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  roundName       String   // "Online Assessment", "Technical Interview 1", "HR Round"
+  roundOrder      Int      // 1, 2, 3...
+  description     String?
+  durationMinutes Int?
+  isEliminating   Boolean  @default(true)
+  tips            String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([companyId, roundOrder])
+  @@index([companyId])
+}
+
+model InterviewQuestion {
+  id              String   @id @default(cuid())
+  companyId       String
+  company         CompanyPrepPath @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  question        String
+  category        String   // "technical", "behavioral", "system-design", "dsa", "hr"
+  difficulty      String   @default("medium") // easy, medium, hard
+  frequency       String?  // "very-common", "common", "occasional"
+  tips            String?
+  sampleAnswer    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([category])
+  @@index([difficulty])
+}
+
+model OnlineAssessment {
+  id              String   @id @default(cuid())
+  companyId       String
+  company         CompanyPrepPath @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  platform        String?  // "HackerRank", "CodeSignal", "Internal"
+  durationMinutes Int?
+  totalQuestions  Int?
+  sections        Json?    // [{ name: "MCQ", count: 10 }, { name: "Coding", count: 2 }]
+  difficulty      String   @default("medium")
+  topics          String[] // ["dsa", "os", "cn", "sql"]
+  tips            String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([companyId])
+}
+
+model SalaryInsight {
+  id              String   @id @default(cuid())
+  companyId       String
+  company         CompanyPrepPath @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  role            String
+  experienceLevel String   // "fresher", "1-3y", "3-5y", "5-10y", "10+y"
+  ctcMin          Float    // in LPA
+  ctcMax          Float    // in LPA
+  ctcMedian       Float?
+  baseMin         Float?
+  baseMax         Float?
+  stockComponent  Float?
+  bonusComponent  Float?
+  source          String?  // "glassdoor", "ambitionbox", "levels.fyi"
+  lastUpdated     DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([companyId, role, experienceLevel])
+  @@index([companyId])
+}
+
+model PrepTimeline {
+  id              String   @id @default(cuid())
+  companyId       String
+  company         CompanyPrepPath @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  weekNumber      Int      // 1-12 (weeks before interview)
+  title           String
+  description     String?
+  tasks           String[] // ["Solve 5 DSA problems daily", "Read system design blog"]
+  focusAreas      String[] // ["dsa", "system-design", "hr"]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([companyId, weekNumber])
+  @@index([companyId])
+}
