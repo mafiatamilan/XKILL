@@ -195,7 +195,17 @@ export const SEED_ROLES: Array<{
     name: 'tpo',
     description: 'Training & placement officer',
     isSystem: true,
-    permissions: ['read:self'],
+    permissions: [
+      'read:self',
+      'manage:tpo',
+      'manage:company-drives',
+      'read:tpo-analytics',
+      'manage:offers',
+      'manage:tpo-interviews',
+      'read:placement-reports',
+      'read:department-stats',
+      'manage:recruiter-coordination',
+    ],
   },
   {
     name: 'parent',

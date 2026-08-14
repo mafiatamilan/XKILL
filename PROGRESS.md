@@ -24,7 +24,7 @@ to the next one.
 - [x] 5.15 Mentor Marketplace — Mentor profiles (faculty/student-owned), availability management, booking with double-booking prevention ($transaction), payment, review, complete flow — complete
 - [x] 5.16 Company Preparation Paths — Per-company hiring patterns, interview questions, OA info, salary insights, prep timeline, public prep-path endpoint — complete
 - [x] 5.17 Recruiter Portal — Recruiter profile, candidate search, shortlist, interview scheduling, hiring analytics — complete
-- [ ] 5.17 Recruiter Portal
+- [x] 5.18 TPO Portal — Company drives, eligibility criteria, offer records, placement reports, department stats, recruiter coordination — complete
 - [ ] 5.18 TPO Portal
 - [ ] 5.19 Faculty Portal
 - [ ] 5.21 Notification & Communication

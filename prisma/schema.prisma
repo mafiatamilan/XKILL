@@ -87,6 +87,8 @@ model User {
   recruiterProfile        RecruiterProfile?
   shortlistedBy           Shortlist[]       @relation("ShortlistedCandidates")
   interviewsAsCandidate   InterviewSchedule[] @relation("InterviewCandidates")
+  offerRecords            OfferRecord[]     @relation("OfferStudents")
+  tpoInterviewsAsCandidate TpoInterviewSchedule[] @relation("TpoInterviewCandidates")
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
 
@@ -1515,6 +1517,7 @@ model CompanyProfile {
   jobListings     JobListing[]
   internshipListings InternshipListing[]
   recruiterProfiles RecruiterProfile[]
+  companyDrives   CompanyDrive[]
 }
 
 model JobListing {
@@ -1920,4 +1923,113 @@ model HiringAnalyticsSnapshot {
   @@unique([recruiterId, period])
   @@index([recruiterId])
   @@index([period])
+}
+
+// ---------------------------------------------------------------------------
+// 5.18 — TPO Portal
+// ---------------------------------------------------------------------------
+
+model CompanyDrive {
+  id              String   @id @default(cuid())
+  companyName     String
+  companyId       String?
+  company         CompanyProfile? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  title           String
+  description     String?
+  roles           String[] // ["SDE", "Data Analyst", "Consultant"]
+  location        String?
+  packageLakhs    Float?
+  deadline        DateTime
+  driveDate       DateTime?
+  status          String   @default("upcoming") // upcoming | ongoing | completed | cancelled
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  eligibilityCriterias EligibilityCriteria[]
+  offerRecords         OfferRecord[]
+  tpoInterviewSchedules TpoInterviewSchedule[]
+
+  @@index([companyId])
+  @@index([status])
+  @@index([deadline])
+}
+
+model EligibilityCriteria {
+  id              String   @id @default(cuid())
+  driveId         String
+  drive           CompanyDrive @relation(fields: [driveId], references: [id], onDelete: Cascade)
+  department      String?  // "CS", "IT", "all"
+  minCgpa         Float?
+  minPercentage   Float?
+  backlogsAllowed Int      @default(0)
+  passingYear     String?  // "2025", "2026"
+  skills          String[] // ["React", "Node.js"]
+  notes           String?
+  createdAt       DateTime @default(now())
+
+  @@index([driveId])
+}
+
+model PlacementReport {
+  id              String   @id @default(cuid())
+  academicYear    String   // "2025-2026"
+  department      String?  // "CS", "IT", "all"
+  totalStudents   Int
+  eligibleStudents Int
+  placedStudents  Int
+  offersMade      Int
+  highestPackage  Float?
+  averagePackage  Float?
+  medianPackage   Float?
+  topRecruiters   String[]
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([academicYear, department])
+  @@index([academicYear])
+}
+
+model OfferRecord {
+  id              String   @id @default(cuid())
+  driveId         String
+  drive           CompanyDrive @relation(fields: [driveId], references: [id], onDelete: Cascade)
+  studentId       String
+  student         User     @relation("OfferStudents", fields: [studentId], references: [id], onDelete: Cascade)
+  role            String
+  ctcLakhs        Float
+  location        String?
+  status          String   @default("offered") // offered | accepted | rejected | joined | declined
+  joiningDate     DateTime?
+  offerDate       DateTime @default(now())
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([driveId, studentId])
+  @@index([driveId])
+  @@index([studentId])
+  @@index([status])
+}
+
+model TpoInterviewSchedule {
+  id              String   @id @default(cuid())
+  driveId         String
+  drive           CompanyDrive @relation(fields: [driveId], references: [id], onDelete: Cascade)
+  candidateId     String
+  candidate       User     @relation("TpoInterviewCandidates", fields: [candidateId], references: [id], onDelete: Cascade)
+  scheduledAt     DateTime
+  durationMinutes Int      @default(60)
+  type            String   @default("onsite") // onsite | virtual | phone
+  status          String   @default("scheduled") // scheduled | completed | cancelled | no_show
+  feedback        String?
+  rating          Int?     // 1-5
+  panelMembers    String[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([driveId])
+  @@index([candidateId])
+  @@index([scheduledAt])
 }
