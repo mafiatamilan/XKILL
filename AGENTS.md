@@ -206,21 +206,24 @@ Build modules in this order — later modules depend on earlier ones:
 17. **Mentor Marketplace** — Search, profile, availability, booking, payment
 18. **Company Prep Paths** — Company profiles, hiring patterns, questions, salary insights
 
-### Phase 6: Community & Certificates
+### Phase 6: Community, Certificates & Cross-Cutting
 19. **Community** — Forum posts/comments, study groups, coding clubs
 20. **Certificates** — Issue, verify, PDF, LinkedIn share
+21. **Notifications** — Notification list (read/unread), announcement feed, broadcast messages. Header bell shows unread count from `GET /notifications/me`
+22. **Search & Discovery** — Global search bar (`GET /search?q=&type=&limit=`) with typeahead results across problems, jobs, mentors, students, companies
+23. **Analytics & Reporting** — Student analytics, faculty analytics, placement analytics, college analytics, revenue analytics (admin), custom report builder with CSV/JSON export
 
 ### Phase 7: Role-Specific Portals
-21. **Faculty Portal** — Dashboard, subject management, attendance, marks, analytics
-22. **Recruiter Portal** — Dashboard, candidate search, shortlist, interviews
-23. **TPO Portal** — Company drives, eligibility, offers, placement reports
-24. **College Admin** — Departments, semesters, courses, faculty/student management
-25. **Platform Admin** — Users, roles, feature flags, system settings, audit logs
+24. **Faculty Portal** — Dashboard, subject management, attendance, marks, analytics
+25. **Recruiter Portal** — Dashboard, candidate search, shortlist, interviews
+26. **TPO Portal** — Company drives, eligibility, offers, placement reports
+27. **College Admin** — Departments, semesters, courses, faculty/student management
+28. **Platform Admin** — Users, roles, feature flags, system settings, audit logs
 
 ### Phase 8: Billing & Lab
-26. **Billing** — Plans, subscription, invoices, coupons
-27. **College Programming Lab** — Subjects, experiments, submissions, exams, OBE
-28. **AI Services** — Tutor, doubt solver, code review, study planner
+29. **Billing** — Plans, subscription, invoices, coupons
+30. **College Programming Lab** — Subjects, experiments, submissions, exams, OBE
+31. **AI Services** — Tutor, doubt solver, code review, study planner
 
 ## Backend API Reference
 
@@ -506,6 +509,32 @@ Build modules in this order — later modules depend on earlier ones:
 | GET | `/notifications/me` | My notifications |
 | PATCH | `/notifications/:id/read` | Mark read |
 | PATCH | `/notifications/read-all` | Mark all read |
+
+### Announcements (`/api/v1/admin/announcements`)
+| Method | Path | Roles | Description |
+|--------|------|-------|-------------|
+| POST | `/admin/announcements` | admin, college_admin, faculty | Create announcement |
+| GET | `/admin/announcements` | admin, college_admin, faculty | List announcements |
+| GET | `/admin/announcements/:id` | admin, college_admin, faculty | Get announcement |
+| PATCH | `/admin/announcements/:id` | admin, college_admin | Update announcement |
+| DELETE | `/admin/announcements/:id` | admin, college_admin | Delete announcement |
+| POST | `/admin/announcements/:id/publish` | admin, college_admin | Publish announcement |
+
+### Notification Templates (`/api/v1/admin/notification-templates`)
+| Method | Path | Roles | Description |
+|--------|------|-------|-------------|
+| POST | `/admin/notification-templates` | admin, college_admin | Create template |
+| GET | `/admin/notification-templates` | admin, college_admin | List templates |
+| GET | `/admin/notification-templates/:id` | admin, college_admin | Get template |
+| PATCH | `/admin/notification-templates/:id` | admin, college_admin | Update template |
+| DELETE | `/admin/notification-templates/:id` | admin | Delete template |
+
+### Broadcast (`/api/v1/admin/broadcast`)
+| Method | Path | Roles | Description |
+|--------|------|-------|-------------|
+| POST | `/admin/broadcast` | admin, college_admin, faculty | Broadcast notification |
+| GET | `/admin/broadcast` | admin, college_admin | List broadcasts |
+| GET | `/admin/broadcast/:id` | admin, college_admin | Get broadcast |
 
 ### Analytics (`/api/v1/analytics`)
 | Method | Path | Description |
