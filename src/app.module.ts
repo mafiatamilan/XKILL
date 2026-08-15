@@ -39,6 +39,12 @@ import { CompanyPrepModule } from './company-prep/company-prep.module';
 import { RecruiterModule } from './recruiter/recruiter.module';
 import { TpoModule } from './tpo/tpo.module';
 import { FacultyPortalModule } from './faculty-portal/faculty-portal.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { AnalyticsModule } from './analytics/analytics.module';
+import { SearchModule } from './search/search.module';
+import { PaymentsModule } from './payments/payments.module';
+import { CommunityModule } from './community/community.module';
+import { LabModule } from './lab/lab.module';
 import { HealthModule } from './health/health.module';
 
 @Module({
@@ -84,6 +90,12 @@ import { HealthModule } from './health/health.module';
     RecruiterModule,
     TpoModule,
     FacultyPortalModule,
+    NotificationsModule,
+    AnalyticsModule,
+    SearchModule,
+    PaymentsModule,
+    CommunityModule,
+    LabModule,
     HealthModule,
   ],
   providers: [

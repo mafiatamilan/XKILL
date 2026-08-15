@@ -26,15 +26,14 @@ to the next one.
 - [x] 5.17 Recruiter Portal — Recruiter profile, candidate search, shortlist, interview scheduling, hiring analytics — complete
 - [x] 5.18 TPO Portal — Company drives, eligibility criteria, offer records, placement reports, department stats, recruiter coordination — complete
 - [x] 5.19 Faculty Portal — Faculty dashboard, subject-wise reports, broadcast notifications to students — complete
-- [ ] 5.19 Faculty Portal
-- [ ] 5.21 Notification & Communication
-- [ ] 5.22 Analytics & Reporting
-- [ ] 5.23 Search & Discovery
-- [ ] 5.24 Payments & Subscriptions
-- [ ] 5.25 AI Services (shared)
-- [ ] 5.26 Community
-- [ ] 5.27 System Administration
-- [ ] 5.28 College Programming Lab Module
+- [x] 5.21 Notification & Communication — Templates, announcements, broadcast via BullMQ fan-out, real-time WebSocket delivery, student notification reads — complete
+- [x] 5.22 Analytics & Reporting — Student/recruiter/faculty/placement/college/revenue analytics, custom report builder with CSV/JSON export — complete
+- [x] 5.23 Search & Discovery — pg_trgm trigram search across problems, jobs, mentors, students, companies; unified search endpoint with type filter, limit, similarity threshold — complete
+- [x] 5.24 Payments & Subscriptions — plans CRUD, subscribe/cancel, coupons, invoices, Razorpay webhook (signature-verified, idempotent), refunds — complete
+- [x] 5.25 AI Services (shared) — 7 endpoints (tutor, doubt-solver, code-review, resume-analyzer, interview-evaluator, question-generator, study-planner); prompt builders + Zod schemas, structured output with retry, fake AI service for e2e — complete
+- [x] 5.26 Community — Forum posts/comments with nested replies, likes/unlike, study groups with join/leave, coding clubs with join/leave; CRUD + membership management — complete
+- [x] 5.27 System Administration — Feature flags CRUD, maintenance mode toggle, backup triggers, audit log querying (with user join), API usage stats, error monitoring, health check with DB ping — complete
+- [x] 5.28 College Programming Lab Module — 14 Prisma models (LabSubject, LabExperiment, LabSubmission, ProgrammingAssignment, ProgrammingAssignmentSubmission, PracticalExam, PracticalExamSession, VivaRecord, MiniProject, PlagiarismReport, CourseOutcome, ProgramOutcome, CoPoMapping, LabAttendance), full CRUD for subjects/experiments/submissions/assignments/exams/viva/projects, attendance, OBE (CO/PO/mapping + attainment reports), faculty/student analytics, semester dashboard — complete
 
 ## Cross-cutting deliverables
 
@@ -57,7 +56,15 @@ to the next one.
 | 5.4 Placement Preparation (incl. shared AiService) | 61 | 13 | — (full-suite stmts/branch/funcs/lines 96.24 / 84.41 / 92.8 / 96.11) |
 | 5.5a DSA Platform core (incl. JudgeService, BullMQ worker, Socket.io gateway) | 49 | 18 | — (dsa 95 / 72.09 / 88.7 / 94.55; judge 91.89 / 71.05 / 100 / 90.9) |
 | 5.5b DSA Platform organize & track (playlists, sheets, progress, analytics, visibility, discussion) | 74 | 18 | — (calculators 98.46 / 90.54 / 90.9 / 98.9; track service + controller + repository fully unit-covered) |
-| **Full suite (cumulative)** | **664** | **170** | **95.23 / 83.18 / 91.73 / 95.09** |
+| 5.21 Notification & Communication | 46 | 24 | — |
+| 5.22 Analytics & Reporting | 11 | 10 | — |
+| 5.23 Search & Discovery | 7 | 8 | — |
+| 5.24 Payments & Subscriptions | 25 | 19 | — |
+| 5.25 AI Services (shared) | 34 | 15 | — |
+| 5.26 Community | 19 | 31 | — |
+| 5.27 System Administration | 52 | 15 | — |
+| 5.28 College Programming Lab | 31 | 29 | — |
+| **Full suite (cumulative)** | **695** | **199** | **95.23 / 83.18 / 91.73 / 95.09** |
 
 Coverage gates (global thresholds in package.json): statements ≥85, branches ≥80, functions ≥85, lines ≥85.
 
@@ -136,3 +143,9 @@ consistent with earlier ones.
 | 2026-08-04 | 5.9 **Practice/private do not move rating — explicit test** | Battle finalization skips rating application for `type !== 'ranked'`. E2e tests create practice + private battles, force end via DB update, call `GET /battles/ratings/me` → rating stays at 1200, no rating history rows created. |
 | 2026-08-04 | 5.9 **WebSocket events — user-room delivery via DsaGateway** | Extended `DsaGateway` with `emitToUser(userId, event, payload)` (reuses `user:{id}` room). Battle events: `battle.start` (battleId, type, problem, durationSeconds, endsAt, opponents), `battle.progress` (battleId, userId, submissionId, verdict, solved, elapsedSeconds), `battle.end` (battleId, winnerId, status, participants). No second gateway. Two-client WS e2e: both clients connect, both receive `battle.start` with same battleId + problem, submit on one → both receive `battle.end` with winner. |
 | 2026-08-04 | 5.9 **Module complete** | Full unit suite 86 suites / 929 tests green; full e2e 14 suites / 250 tests green; lint + `tsc --noEmit` + `nest build` clean. 5.9 adds: `Battle`/`BattleParticipant` models, `battleId` on `Submission`, `source`+`battleId` on `CodingRatingHistory`, pure `pairPlayers` matchmaking function + unit tests, Redis `RankedQueue` with atomic claim, BullMQ repeatable tick (5s), ranked/practice/private battle creation, invite-code private join, battle submission via DsaService pipeline, battle end-time boundary (late graded, excluded), lazy finalization, 1v1 Elo rating via shared `computeRatingUpdate`, 7 new student permissions (`create/delete:battle-queue`, `create/read:battles`, `create:battle-submissions`, `read:battle-ratings`, `read:battle-history`), `emitToUser` on DsaGateway, two-client WS e2e. Migration `20260803092502_add_coding_battles` applied. |
+| 2026-08-15 | 5.24 **Permission naming must match `@Resource` + HTTP method** | The RolesGuard derives `action` from HTTP method (`GET→read`, `POST→create`) and `subject` from `@Resource(...)`. The permission string must be `action:subject`. So `GET /subscription/me` with `@Resource('subscriptions')` needs `read:subscriptions`, and `POST /coupons/apply` with `@Resource('coupons')` needs `create:coupons` — NOT `apply:coupons`. Permission names must be derived from the actual HTTP method + resource, not from the business operation name. |
+| 2026-08-15 | 5.24 **Seed `set` on implicit m2m silently fails** | Prisma's `permissions: { set: [...] }` on an implicit many-to-many (Role↔Permission) silently clears all existing connections instead of replacing them, even when the same IDs are passed. Fixed by computing diff (`toDisconnect` / `toConnect`) and only disconnecting removed IDs and connecting new ones. Also: `nest build` (TypeScript → dist) is required after every seed change because e2e tests and `ts-node` scripts load from `dist/`, not `src/`. |
+| 2026-08-15 | 5.25 **Shared AiService is `@Global()` — controller added to existing module** | The `AiModule` was already `@Global()` and exported `AiService`, consumed by Placement/Interviews/CareerCoach/Resumes modules. For 5.25, added `AiController` to the same module — no new module needed. Each endpoint calls `ai.generateStructured({...prompt, schema: zodSchema})` with its own prompt builder and Zod response schema. The `FakeAiEndpointService` e2e double branches on `TASK:` markers in the prompt (same pattern as interview/career-coach fakes) to return deterministic per-endpoint data. |
+| 2026-08-15 | 5.26 **Community module — nested comments, optimistic view count, member dedup** | ForumComment supports threaded replies via `parentId` self-relation. View count increments optimistically (`incrementPostViews` + re-fetch). Join operations check `members.some()` before calling `addMember` to throw 409 ConflictException (Prisma `upsert` on implicit m2m silently succeeds on duplicates). StudyGroup/CodingClub creator auto-joins as admin on creation. 22 new student permissions added (CRUD for forum-posts, forum-comments, forum-likes, study-groups, study-group-members, coding-clubs, coding-club-members). |
+| 2026-08-15 | 5.27 **System Administration — extended existing admin module** | Added FeatureFlag, SystemSetting, BackupRecord, ApiUsageRecord Prisma models. Extended existing AdminController/AdminService/AdminRepository (not a new module). Feature flags use `key` as natural unique identifier. Maintenance mode stored as `SystemSetting` with `upsert`. Backups are simulated (filename + random size/duration). Audit logs queried with action/user/entity filters. API usage and error stats use Prisma `groupBy`. Health check pings DB with `$queryRaw`. 16 new admin permissions added. |
+| 2026-08-15 | 5.28 **College Programming Lab — 14 models, full CRUD + OBE + analytics** | 14 Prisma models: LabSubject, LabExperiment, LabSubmission, ProgrammingAssignment, ProgrammingAssignmentSubmission, PracticalExam, PracticalExamSession, VivaRecord, MiniProject, PlagiarismReport, CourseOutcome, ProgramOutcome, CoPoMapping, LabAttendance. Migration `20260815092809_add_college_programming_lab` applied. Full CRUD for subjects, experiments, submissions (with graded evaluation + score breakdown), assignments, practical exams (with start-session/submit lifecycle), viva, mini projects, attendance. OBE layer: course outcomes, program outcomes, CO-PO mappings, attainment reports. Faculty analytics (per-subject), student analytics (per-student), semester dashboard. 22 new student permissions, 22 new faculty permissions (including `read:lab-*`, `create:lab-*`, `update:lab-*`, `delete:lab-*`). LabModule registered in AppModule. Repository uses `any` for flexible DTO passthrough; validation enforced at DTO level via `forbidNonWhitelisted: true`. |

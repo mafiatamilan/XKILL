@@ -54,6 +54,11 @@ export interface AppConfig {
   };
   adminEmail: string;
   adminPassword: string;
+  razorpay: {
+    keyId: string;
+    keySecret: string;
+    webhookSecret: string;
+  };
 }
 
 @Injectable()
@@ -110,6 +115,11 @@ export class AppConfigService {
       },
       adminEmail: this.config.getOrThrow<string>('ADMIN_EMAIL'),
       adminPassword: this.config.getOrThrow<string>('ADMIN_PASSWORD'),
+      razorpay: {
+        keyId: this.config.get<string>('RAZORPAY_KEY_ID') ?? '',
+        keySecret: this.config.get<string>('RAZORPAY_KEY_SECRET') ?? '',
+        webhookSecret: this.config.get<string>('RAZORPAY_WEBHOOK_SECRET') ?? '',
+      },
     };
     return cfg;
   }

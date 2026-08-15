@@ -40,6 +40,7 @@ model User {
   progressRecords         ProgressRecord[]
   studyPlans              StudyPlan[]
   notifications           Notification[]
+  announcements           Announcement[]
   calendarEvents          CalendarEvent[]
   activityLogs            ActivityLog[]
   settings                UserSettings?
@@ -89,6 +90,21 @@ model User {
   interviewsAsCandidate   InterviewSchedule[] @relation("InterviewCandidates")
   offerRecords            OfferRecord[]     @relation("OfferStudents")
   tpoInterviewsAsCandidate TpoInterviewSchedule[] @relation("TpoInterviewCandidates")
+  subscriptions       Subscription[]
+  invoices            Invoice[]
+  refunds             Refund[]
+  forumPosts          ForumPost[]          @relation("ForumPostAuthor")
+  forumComments       ForumComment[]       @relation("ForumCommentAuthor")
+  forumLikes          ForumLike[]          @relation("ForumLikeAuthor")
+  studyGroupsCreated  StudyGroup[]         @relation("StudyGroupCreator")
+  studyGroupMemberships StudyGroupMember[] @relation("StudyGroupMemberUser")
+  codingClubsCreated  CodingClub[]         @relation("CodingClubCreator")
+  codingClubMemberships CodingClubMember[] @relation("CodingClubMemberUser")
+  labSubmissions      LabSubmission[]
+  labAssignmentSubmissions ProgrammingAssignmentSubmission[]
+  labExamSessions     PracticalExamSession[]
+  labVivas            VivaRecord[]
+  labAttendance       LabAttendance[]
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
 
@@ -2032,4 +2048,633 @@ model TpoInterviewSchedule {
   @@index([driveId])
   @@index([candidateId])
   @@index([scheduledAt])
+}
+
+// ---------------------------------------------------------------------------
+// 5.21 Notification & Communication
+// ---------------------------------------------------------------------------
+
+model NotificationTemplate {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  channel     String   // in_app | email | push | sms
+  eventType   String   // announcement | broadcast | system | academic | placement | job | mentor
+  subject     String?
+  body        String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  broadcasts  BroadcastMessage[]
+
+  @@index([channel])
+  @@index([eventType])
+  @@index([isActive])
+}
+
+model Announcement {
+  id          String    @id @default(cuid())
+  authorId    String
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  title       String
+  content     String
+  type        String    @default("general") // general | academic | placement | event | urgent
+  priority    String    @default("normal") // low | normal | high | urgent
+  targetRoles String[]  // which roles see the announcement; empty = all
+  isPublished Boolean   @default(false)
+  publishedAt DateTime?
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  broadcasts  BroadcastMessage[]
+
+  @@index([authorId])
+  @@index([type])
+  @@index([isPublished])
+  @@index([publishedAt])
+  @@index([expiresAt])
+}
+
+model BroadcastMessage {
+  id              String   @id @default(cuid())
+  templateId      String?
+  template        NotificationTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  announcementId  String?
+  announcement    Announcement? @relation(fields: [announcementId], references: [id], onDelete: SetNull)
+  channel         String   // in_app | email | push | sms
+  targetUserIds   String[]
+  title           String
+  body            String
+  metadata        Json?
+  status          String   @default("pending") // pending | processing | completed | failed
+  totalRecipients Int      @default(0)
+  sentCount       Int      @default(0)
+  failedCount     Int      @default(0)
+  createdBy       String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdBy])
+  @@index([templateId])
+  @@index([announcementId])
+  @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// 5.24 — Payments & Subscriptions
+// ---------------------------------------------------------------------------
+
+model SubscriptionPlan {
+  id              String   @id @default(cuid())
+  razorpayPlanId  String?  @unique
+  name            String
+  description     String?
+  amount          Int      // in INR (paise / 100)
+  currency        String   @default("INR")
+  interval        Int      @default(1) // billing interval count
+  intervalUnit    String   @default("monthly") // daily | weekly | monthly | yearly
+  features        String[] // list of feature descriptions
+  isActive        Boolean  @default(true)
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  subscriptions Subscription[]
+  invoices      Invoice[]
+}
+
+model Subscription {
+  id                  String   @id @default(cuid())
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId              String
+  plan                SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  razorpaySubscriptionId String? @unique
+  razorpayCustomerId  String?
+  status              String   @default("active") // active | past_due | cancelled | paused
+  currentPeriodStart  DateTime?
+  currentPeriodEnd    DateTime?
+  cancelAtPeriodEnd   Boolean  @default(false)
+  cancelledAt         DateTime?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  invoices  Invoice[]
+  refunds   Refund[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([razorpaySubscriptionId])
+}
+
+model Invoice {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscriptionId    String?
+  subscription      Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  planId            String?
+  plan              SubscriptionPlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  amount            Int      // in INR
+  currency          String   @default("INR")
+  status            String   @default("pending") // pending | paid | failed | refunded
+  description       String?
+  dueDate           DateTime?
+  paidAt            DateTime?
+  refunds           Refund[]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([userId])
+  @@index([subscriptionId])
+  @@index([status])
+  @@index([razorpayOrderId])
+}
+
+model Coupon {
+  id            String   @id @default(cuid())
+  code          String   @unique
+  description   String?
+  discountType  String   // percentage | fixed
+  discountValue Int      // percentage (0-100) or fixed amount in INR
+  maxUses       Int?     // null = unlimited
+  usedCount     Int      @default(0)
+  minAmount     Int?     // minimum order amount to apply
+  planId        String?  // null = applies to all plans
+  isActive      Boolean  @default(true)
+  expiresAt     DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([code])
+  @@index([isActive])
+}
+
+model Refund {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscriptionId    String?
+  subscription      Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  invoiceId         String?
+  invoice           Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  razorpayRefundId  String?  @unique
+  amount            Int      // in INR
+  reason            String?
+  status            String   @default("pending") // pending | processed | failed
+  processedAt       DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([userId])
+  @@index([invoiceId])
+  @@index([status])
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// 5.26 — Community
+// ────────────────────────────────────────────────────────────────────────────
+
+model ForumPost {
+  id          String          @id @default(cuid())
+  authorId    String
+  author      User            @relation("ForumPostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  title       String
+  body        String          @db.Text
+  tags        String[]
+  viewCount   Int             @default(0)
+  likeCount   Int             @default(0)
+  commentCount Int            @default(0)
+  isPinned    Boolean         @default(false)
+  isLocked    Boolean         @default(false)
+  comments    ForumComment[]
+  likes       ForumLike[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([authorId])
+  @@index([createdAt])
+  @@index([tags])
+}
+
+model ForumComment {
+  id          String     @id @default(cuid())
+  postId      String
+  post        ForumPost  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId    String
+  author      User       @relation("ForumCommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  body        String     @db.Text
+  likeCount   Int        @default(0)
+  parentId    String?
+  parent      ForumComment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies     ForumComment[] @relation("CommentReplies")
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([postId])
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+model ForumLike {
+  id        String    @id @default(cuid())
+  postId    String
+  post      ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User      @relation("ForumLikeAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+
+  @@unique([postId, userId])
+  @@index([userId])
+}
+
+model StudyGroup {
+  id          String            @id @default(cuid())
+  name        String
+  description String?
+  creatorId   String
+  creator     User              @relation("StudyGroupCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  isPublic    Boolean           @default(true)
+  maxMembers  Int?
+  members     StudyGroupMember[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([creatorId])
+  @@index([isPublic])
+}
+
+model StudyGroupMember {
+  id        String     @id @default(cuid())
+  groupId   String
+  group     StudyGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User       @relation("StudyGroupMemberUser", fields: [userId], references: [id], onDelete: Cascade)
+  role      String     @default("member") // admin | member
+  joinedAt  DateTime   @default(now())
+
+  @@unique([groupId, userId])
+  @@index([userId])
+}
+
+model CodingClub {
+  id          String              @id @default(cuid())
+  name        String
+  description String?
+  creatorId   String
+  creator     User                @relation("CodingClubCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  isPublic    Boolean             @default(true)
+  maxMembers  Int?
+  members     CodingClubMember[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([creatorId])
+  @@index([isPublic])
+}
+
+model CodingClubMember {
+  id        String     @id @default(cuid())
+  clubId    String
+  club      CodingClub @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User       @relation("CodingClubMemberUser", fields: [userId], references: [id], onDelete: Cascade)
+  role      String     @default("member") // admin | member
+  joinedAt  DateTime   @default(now())
+
+  @@unique([clubId, userId])
+  @@index([userId])
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// 5.27 — System Administration
+// ────────────────────────────────────────────────────────────────────────────
+
+model FeatureFlag {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String?
+  isEnabled   Boolean  @default(false)
+  rolloutPct  Int      @default(100) // 0-100 percentage of users who see the feature
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([key])
+  @@index([isEnabled])
+}
+
+model SystemSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   @db.Text
+  category  String?  // general | maintenance | email | storage
+  description String?
+  updatedBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([key])
+  @@index([category])
+}
+
+model BackupRecord {
+  id          String   @id @default(cuid())
+  filename    String
+  status      String   @default("completed") // pending | in_progress | completed | failed
+  sizeBytes   Int?
+  durationMs  Int?
+  triggeredBy String?
+  createdAt   DateTime @default(now())
+  completedAt DateTime?
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model ApiUsageRecord {
+  id          String   @id @default(cuid())
+  endpoint    String
+  method      String
+  statusCode  Int
+  userId      String?
+  durationMs  Int?
+  ip          String?
+  createdAt   DateTime @default(now())
+
+  @@index([endpoint])
+  @@index([createdAt])
+  @@index([userId])
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// 5.28 — College Programming Lab Module
+// ────────────────────────────────────────────────────────────────────────────
+
+model LabSubject {
+  id              String           @id @default(cuid())
+  name            String
+  code            String           @unique
+  department      String
+  semester        Int
+  credits         Int
+  language        String           @default("c")
+  passingCriteria Json?            // { minMarks: number, minAttendance: number }
+  createdBy       String?
+  experiments     LabExperiment[]
+  assignments     ProgrammingAssignment[]
+  exams           PracticalExam[]
+  vivas           VivaRecord[]
+  projects        MiniProject[]
+  attendance      LabAttendance[]
+  courseOutcomes  CourseOutcome[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([code])
+  @@index([department])
+  @@index([semester])
+}
+
+model LabExperiment {
+  id              String           @id @default(cuid())
+  subjectId       String
+  subject         LabSubject       @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  weekNumber      Int
+  title           String
+  objective       String           @db.Text
+  theory          String?          @db.Text
+  problemStatement String          @db.Text
+  sampleInput     String?
+  sampleOutput    String?
+  constraints     String?
+  starterCode     String?          @db.Text
+  deadline        DateTime?
+  rubric          Json?            // [{ criterion: string, maxScore: number, description: string }]
+  vivaQuestions    Json?            // [{ question: string, answer: string }]
+  submissions     LabSubmission[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([subjectId])
+  @@index([weekNumber])
+  @@index([deadline])
+}
+
+model LabSubmission {
+  id              String   @id @default(cuid())
+  experimentId    String
+  experiment      LabExperiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  studentId       String
+  student         User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  sourceCode      String   @db.Text
+  language        String
+  status          String   @default("draft") // draft | submitted | graded
+  compilationScore Int?
+  correctnessScore Int?
+  efficiencyScore Int?
+  codingStandardsScore Int?
+  documentationScore Int?
+  totalScore      Int?
+  feedback        String?  @db.Text
+  submissionNumber Int     @default(1)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([experimentId, studentId, submissionNumber])
+  @@index([experimentId])
+  @@index([studentId])
+  @@index([status])
+}
+
+model ProgrammingAssignment {
+  id              String   @id @default(cuid())
+  subjectId       String
+  subject         LabSubject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  title           String
+  description     String   @db.Text
+  datasetUrl      String?
+  attachments     String[]
+  deadline        DateTime?
+  maxScore        Int      @default(100)
+  submissions     ProgrammingAssignmentSubmission[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([subjectId])
+  @@index([deadline])
+}
+
+model ProgrammingAssignmentSubmission {
+  id              String   @id @default(cuid())
+  assignmentId    String
+  assignment      ProgrammingAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  studentId       String
+  student         User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  submissionType  String   @default("file") // file | github
+  fileUrl         String?
+  githubLink      String?
+  status          String   @default("submitted") // submitted | graded
+  score           Int?
+  feedback        String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([assignmentId, studentId])
+  @@index([assignmentId])
+  @@index([studentId])
+}
+
+model PracticalExam {
+  id              String   @id @default(cuid())
+  subjectId       String
+  subject         LabSubject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  title           String
+  description     String?  @db.Text
+  startTime       DateTime
+  endTime         DateTime
+  durationMinutes Int
+  questionCount   Int
+  difficulty      String   @default("medium")
+  language        String   @default("c")
+  maxScore        Int      @default(100)
+  securityConfig  Json     @default("{}") // { fullscreen, tabSwitchDetection, copyPasteRestriction, browserRefreshRecovery, autoSave, webcam }
+  sessions        PracticalExamSession[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([subjectId])
+  @@index([startTime])
+}
+
+model PracticalExamSession {
+  id              String   @id @default(cuid())
+  examId          String
+  exam            PracticalExam @relation(fields: [examId], references: [id], onDelete: Cascade)
+  studentId       String
+  student         User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  startedAt       DateTime @default(now())
+  submittedAt     DateTime?
+  status          String   @default("in_progress") // in_progress | submitted | timed_out
+  score           Int?
+  activityLog     Json     @default("[]") // [{ event: string, timestamp: Date, metadata: object }]
+  createdAt       DateTime @default(now())
+
+  @@unique([examId, studentId])
+  @@index([examId])
+  @@index([studentId])
+}
+
+model VivaRecord {
+  id              String   @id @default(cuid())
+  subjectId       String
+  subject         LabSubject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  studentId       String
+  student         User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  examinerId      String?
+  questionBank    Json     @default("[]") // [{ question: string, maxMarks: number }]
+  marksObtained   Int?
+  remarks         String?  @db.Text
+  attendance      Boolean  @default(true)
+  passed          Boolean?
+  recordingUrl    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([subjectId])
+  @@index([studentId])
+}
+
+model MiniProject {
+  id              String   @id @default(cuid())
+  subjectId       String
+  subject         LabSubject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  title           String
+  abstract        String?  @db.Text
+  problemStatement String? @db.Text
+  stack           String[]
+  repoLink        String?
+  demoVideoUrl    String?
+  docsUrl         String?
+  evaluationScore Int?
+  evaluationFeedback String? @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([subjectId])
+}
+
+model PlagiarismReport {
+  id              String   @id @default(cuid())
+  submissionId    String
+  studentId       String
+  comparedWithId  String?
+  comparisonType  String   // student_vs_student | student_vs_previous_batch | student_vs_internet | student_vs_ai
+  similarityPct   Float
+  matchedSegments Json     @default("[]")
+  reportUrl       String?
+  createdAt       DateTime @default(now())
+
+  @@index([submissionId])
+  @@index([studentId])
+  @@index([comparisonType])
+}
+
+model CourseOutcome {
+  id              String   @id @default(cuid())
+  subjectId       String
+  subject         LabSubject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  code            String   // CO1, CO2, etc.
+  description     String
+  coPoMappings    CoPoMapping[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([subjectId, code])
+  @@index([subjectId])
+}
+
+model ProgramOutcome {
+  id              String   @id @default(cuid())
+  code            String   @unique // PO1, PO2, etc.
+  description     String
+  coPoMappings    CoPoMapping[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([code])
+}
+
+model CoPoMapping {
+  id              String   @id @default(cuid())
+  coId            String
+  co              CourseOutcome @relation(fields: [coId], references: [id], onDelete: Cascade)
+  poId            String
+  po              ProgramOutcome @relation(fields: [poId], references: [id], onDelete: Cascade)
+  attainmentLevel Int      @default(0) // 0-3 scale
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([coId, poId])
+  @@index([coId])
+  @@index([poId])
+}
+
+model LabAttendance {
+  id              String   @id @default(cuid())
+  subjectId       String
+  subject         LabSubject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  studentId       String
+  student         User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  type            String   // lab_login | experiment_submission | exam_attendance | qr
+  markedAt        DateTime @default(now())
+  metadata        Json?    // { qrCode?, ipAddress? }
+
+  @@index([subjectId])
+  @@index([studentId])
+  @@index([markedAt])
 }

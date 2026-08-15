@@ -7,7 +7,14 @@ import {
 import { AuditService } from '../audit/audit.service';
 import { buildPaginationMeta, PaginationMeta } from '../common/pagination/pagination.dto';
 import { AdminRepository } from './admin.repository';
-import { CreateRoleDto, RoleResponseDto, UpdateRoleDto, UpdateUserStatusDto } from './dto/role.dto';
+import {
+  CreateRoleDto,
+  RoleResponseDto,
+  UpdateRoleDto,
+  UpdateUserStatusDto,
+  CreateFeatureFlagDto,
+  UpdateFeatureFlagDto,
+} from './dto/role.dto';
 
 @Injectable()
 export class AdminService {
@@ -159,6 +166,166 @@ export class AdminService {
       ip,
     });
     return this.toRoleResponse(role);
+  }
+
+  // ── Feature Flags ──
+
+  async listFeatureFlags() {
+    return this.repository.listFeatureFlags();
+  }
+
+  async createFeatureFlag(adminId: string, dto: CreateFeatureFlagDto, ip?: string) {
+    const existing = await this.repository.findFeatureFlagByKey(dto.key);
+    if (existing) {
+      throw new ConflictException({
+        code: 'FLAG_EXISTS',
+        message: `Flag '${dto.key}' already exists`,
+      });
+    }
+    const flag = await this.repository.createFeatureFlag(dto);
+    await this.audit.record({
+      userId: adminId,
+      action: 'admin.feature_flag.create',
+      entityType: 'feature_flag',
+      entityId: flag.id,
+      after: { key: flag.key, name: flag.name, isEnabled: flag.isEnabled },
+      ip,
+    });
+    return flag;
+  }
+
+  async updateFeatureFlag(adminId: string, key: string, dto: UpdateFeatureFlagDto, ip?: string) {
+    const existing = await this.repository.findFeatureFlagByKey(key);
+    if (!existing) {
+      throw new NotFoundException({ code: 'FLAG_NOT_FOUND', message: `Flag '${key}' not found` });
+    }
+    const flag = await this.repository.updateFeatureFlag(key, dto);
+    await this.audit.record({
+      userId: adminId,
+      action: 'admin.feature_flag.update',
+      entityType: 'feature_flag',
+      entityId: flag.id,
+      before: { isEnabled: existing.isEnabled, rolloutPct: existing.rolloutPct },
+      after: { isEnabled: flag.isEnabled, rolloutPct: flag.rolloutPct },
+      ip,
+    });
+    return flag;
+  }
+
+  async deleteFeatureFlag(adminId: string, key: string, ip?: string) {
+    const existing = await this.repository.findFeatureFlagByKey(key);
+    if (!existing) {
+      throw new NotFoundException({ code: 'FLAG_NOT_FOUND', message: `Flag '${key}' not found` });
+    }
+    await this.repository.deleteFeatureFlag(key);
+    await this.audit.record({
+      userId: adminId,
+      action: 'admin.feature_flag.delete',
+      entityType: 'feature_flag',
+      entityId: existing.id,
+      before: { key, name: existing.name },
+      ip,
+    });
+  }
+
+  // ── Maintenance Mode ──
+
+  async getMaintenanceMode() {
+    const setting = await this.repository.getSystemSetting('maintenance_mode');
+    return { enabled: setting?.value === 'true', updatedAt: setting?.updatedAt };
+  }
+
+  async toggleMaintenanceMode(adminId: string, ip?: string) {
+    const current = await this.repository.getSystemSetting('maintenance_mode');
+    const newValue = current?.value !== 'true' ? 'true' : 'false';
+    const setting = await this.repository.upsertSystemSetting({
+      key: 'maintenance_mode',
+      value: newValue,
+      category: 'maintenance',
+      description: 'When enabled, non-admin users see a maintenance page',
+      updatedBy: adminId,
+    });
+    await this.audit.record({
+      userId: adminId,
+      action: 'admin.maintenance.toggle',
+      entityType: 'system_setting',
+      entityId: setting.id,
+      before: { enabled: current?.value === 'true' },
+      after: { enabled: newValue === 'true' },
+      ip,
+    });
+    return { enabled: newValue === 'true', updatedAt: setting.updatedAt };
+  }
+
+  // ── Backups ──
+
+  async listBackups() {
+    return this.repository.listBackups();
+  }
+
+  async triggerBackup(adminId: string, ip?: string) {
+    const filename = `backup-${new Date().toISOString().replace(/[:.]/g, '-')}.sql`;
+    const backup = await this.repository.createBackup({ filename, triggeredBy: adminId });
+    await this.audit.record({
+      userId: adminId,
+      action: 'admin.backup.trigger',
+      entityType: 'backup',
+      entityId: backup.id,
+      after: { filename },
+      ip,
+    });
+    // Simulate backup completion
+    await this.repository.updateBackup(backup.id, {
+      status: 'completed',
+      sizeBytes: Math.floor(Math.random() * 10_000_000),
+      durationMs: Math.floor(Math.random() * 5000),
+      completedAt: new Date(),
+    });
+    return this.repository.listBackups(1);
+  }
+
+  // ── Audit Logs ──
+
+  async listAuditLogs(
+    page: number,
+    limit: number,
+    filters: { action?: string; userId?: string; entityType?: string },
+  ) {
+    const skip = (page - 1) * limit;
+    const { logs, total } = await this.repository.listAuditLogs({ skip, take: limit, ...filters });
+    return {
+      data: logs.map((log) => ({
+        id: log.id,
+        userId: log.userId,
+        userName: log.user?.fullName ?? null,
+        action: log.action,
+        entityType: log.entityType,
+        entityId: log.entityId,
+        before: log.before,
+        after: log.after,
+        ip: log.ip,
+        createdAt: log.createdAt,
+      })),
+      meta: buildPaginationMeta(total, page, limit),
+    };
+  }
+
+  // ── API Usage ──
+
+  async getApiUsageStats(startDate?: Date, endDate?: Date) {
+    return this.repository.getApiUsageStats({ startDate, endDate });
+  }
+
+  // ── Error Monitoring ──
+
+  async getErrorStats(startDate?: Date, endDate?: Date) {
+    return this.repository.getErrorStats({ startDate, endDate });
+  }
+
+  // ── Health ──
+
+  async healthCheck() {
+    return this.repository.healthCheck();
   }
 
   private async resolvePermissions(names: string[]): Promise<string[]> {

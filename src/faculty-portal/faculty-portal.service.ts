@@ -1,12 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { BroadcastNotificationDto } from './dto/faculty-portal.dto';
+import { NotificationService } from '../notifications/notification.service';
 
 @Injectable()
 export class FacultyPortalService {
   private readonly logger = new Logger(FacultyPortalService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationService: NotificationService,
+  ) {}
 
   async getDashboard(userId: string) {
     const faculty = await this.prisma.user.findUnique({
@@ -106,38 +110,18 @@ export class FacultyPortalService {
   }
 
   async broadcastNotification(userId: string, dto: BroadcastNotificationDto) {
-    // Find target students
-    const where: Record<string, unknown> = {
-      role: { name: 'student' },
-      deletedAt: null,
-    };
+    const targetRoles = dto.targetGroups && dto.targetGroups.length > 0 ? undefined : ['student'];
 
-    // If target groups specified, filter by department
-    if (dto.targetGroups && dto.targetGroups.length > 0) {
-      where.studentProfile = {
-        department: { in: dto.targetGroups },
-      };
-    }
-
-    const students = await this.prisma.user.findMany({
-      where,
-      select: { id: true },
-    });
-
-    // Create notifications for all target students
-    const notifications = await this.prisma.notification.createMany({
-      data: students.map((student) => ({
-        userId: student.id,
+    const broadcast = await this.notificationService.broadcast(
+      {
         title: dto.title,
-        message: dto.message,
-        type: 'broadcast',
-      })),
-    });
-
-    this.logger.log(
-      `Broadcast from faculty ${userId}: "${dto.title}" sent to ${notifications.count} students`,
+        body: dto.message,
+        channel: 'in_app',
+        targetRoles,
+      },
+      userId,
     );
 
-    return { sentTo: notifications.count, title: dto.title };
+    return { sentTo: broadcast.totalRecipients, title: dto.title };
   }
 }

@@ -1,10 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { FacultyPortalService } from './faculty-portal.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationService } from '../notifications/notification.service';
 
 describe('FacultyPortalService', () => {
   let service: FacultyPortalService;
   let prisma: Record<string, Record<string, jest.Mock>>;
+  let notificationService: Record<string, jest.Mock>;
 
   beforeEach(async () => {
     prisma = {
@@ -26,13 +28,18 @@ describe('FacultyPortalService', () => {
       internalMark: {
         aggregate: jest.fn(),
       },
-      notification: {
-        createMany: jest.fn(),
-      },
     } as unknown as Record<string, Record<string, jest.Mock>>;
 
+    notificationService = {
+      broadcast: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
-      providers: [FacultyPortalService, { provide: PrismaService, useValue: prisma }],
+      providers: [
+        FacultyPortalService,
+        { provide: PrismaService, useValue: prisma },
+        { provide: NotificationService, useValue: notificationService },
+      ],
     }).compile();
 
     service = module.get(FacultyPortalService);
@@ -85,8 +92,10 @@ describe('FacultyPortalService', () => {
 
   describe('broadcastNotification', () => {
     it('sends notification to all students', async () => {
-      prisma.user.findMany.mockResolvedValue([{ id: 's1' }, { id: 's2' }]);
-      prisma.notification.createMany.mockResolvedValue({ count: 2 });
+      notificationService.broadcast.mockResolvedValue({
+        totalRecipients: 2,
+        title: 'Exam Update',
+      });
 
       const result = await service.broadcastNotification('f1', {
         title: 'Exam Update',
@@ -94,11 +103,17 @@ describe('FacultyPortalService', () => {
       });
       expect(result.sentTo).toBe(2);
       expect(result.title).toBe('Exam Update');
+      expect(notificationService.broadcast).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'Exam Update', channel: 'in_app' }),
+        'f1',
+      );
     });
 
     it('filters by department when targetGroups specified', async () => {
-      prisma.user.findMany.mockResolvedValue([{ id: 's1' }]);
-      prisma.notification.createMany.mockResolvedValue({ count: 1 });
+      notificationService.broadcast.mockResolvedValue({
+        totalRecipients: 1,
+        title: 'CS Update',
+      });
 
       const result = await service.broadcastNotification('f1', {
         title: 'CS Update',

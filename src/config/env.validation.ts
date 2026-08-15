@@ -53,6 +53,10 @@ const EnvSchema = z.object({
 
   ADMIN_EMAIL: z.string().email().optional().default('admin@xkill.app'),
   ADMIN_PASSWORD: z.string().optional().default('Admin@1234'),
+
+  RAZORPAY_KEY_ID: z.string().optional().default(''),
+  RAZORPAY_KEY_SECRET: z.string().optional().default(''),
+  RAZORPAY_WEBHOOK_SECRET: z.string().optional().default(''),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

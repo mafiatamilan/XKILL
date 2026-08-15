@@ -37,6 +37,7 @@ export function mockConfig(overrides: Partial<AppConfig> = {}): AppConfigService
     rateLimit: { ttlMs: 60000, limit: 100, authLimit: 10 },
     adminEmail: 'admin@xkill.app',
     adminPassword: 'Admin@1234',
+    razorpay: { keyId: '', keySecret: '', webhookSecret: '' },
   };
   const merged: AppConfig = {
     ...base,
@@ -49,6 +50,7 @@ export function mockConfig(overrides: Partial<AppConfig> = {}): AppConfigService
     },
     mail: { ...base.mail, ...(overrides.mail ?? {}) },
     rateLimit: { ...base.rateLimit, ...(overrides.rateLimit ?? {}) },
+    razorpay: { ...base.razorpay, ...(overrides.razorpay ?? {}) },
   };
   return { get: () => merged } as unknown as AppConfigService;
 }

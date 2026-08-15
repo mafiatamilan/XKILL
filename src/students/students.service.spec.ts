@@ -2,6 +2,7 @@ import { NotFoundException } from '@nestjs/common';
 import { AuditService } from '../audit/audit.service';
 import { StudentsRepository } from './students.repository';
 import { StudentsService, computeProfileCompletion } from './students.service';
+import { NotificationService } from '../notifications/notification.service';
 
 const skill = (overrides: Record<string, unknown> = {}) => ({
   id: 'sk-1',
@@ -101,6 +102,7 @@ describe('computeProfileCompletion', () => {
 describe('StudentsService', () => {
   let repository: jest.Mocked<Pick<StudentsRepository, keyof StudentsRepository>>;
   let audit: jest.Mocked<AuditService>;
+  let notificationService: jest.Mocked<NotificationService>;
   let service: StudentsService;
 
   beforeEach(() => {
@@ -145,7 +147,14 @@ describe('StudentsService', () => {
       createActivityLog: jest.fn(),
     } as unknown as jest.Mocked<StudentsRepository>;
     audit = { record: jest.fn() } as unknown as jest.Mocked<AuditService>;
-    service = new StudentsService(repository as unknown as StudentsRepository, audit);
+    notificationService = {
+      createNotification: jest.fn(),
+    } as unknown as jest.Mocked<NotificationService>;
+    service = new StudentsService(
+      repository as unknown as StudentsRepository,
+      audit,
+      notificationService,
+    );
   });
 
   describe('getProfile', () => {
@@ -590,7 +599,8 @@ describe('StudentsService', () => {
     });
 
     it('creates an internal notification and logs activity', async () => {
-      repository.createNotification.mockResolvedValue(notification());
+      const mockNotification = notification();
+      (notificationService.createNotification as jest.Mock).mockResolvedValue(mockNotification);
       const result = await service.createNotification('user-1', {
         type: 'placement',
         title: 'Drive',

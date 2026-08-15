@@ -6,6 +6,7 @@ import { calculateReadinessScore, ReadinessInput } from './readiness/readiness-s
 import { CalendarEventResponseDto, SettingsResponseDto } from './dto/calendar.dto';
 import { CareerGoalResponseDto, ProfileResponseDto, SkillResponseDto } from './dto/profile.dto';
 import { NotificationResponseDto, ReadinessScoreResponseDto } from './dto/notification.dto';
+import { NotificationService } from '../notifications/notification.service';
 
 export interface ListResult<T> {
   data: T[];
@@ -52,6 +53,7 @@ export class StudentsService {
   constructor(
     private readonly repository: StudentsRepository,
     private readonly audit: AuditService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   // ---- Profile ----
@@ -764,18 +766,14 @@ export class StudentsService {
   }
 
   /**
-   * Internal create hook for other modules (5.21 fan-out machinery lands later).
+   * Internal create hook for other modules — delegates to NotificationService
+   * for real-time WebSocket delivery and BullMQ fan-out support.
    */
   async createNotification(
     userId: string,
     data: { type: string; title: string; message: string },
   ): Promise<NotificationResponseDto> {
-    const notification = await this.repository.createNotification({
-      userId,
-      type: data.type,
-      title: data.title,
-      message: data.message,
-    });
+    const notification = await this.notificationService.createNotification(userId, data);
     await this.logActivity(userId, 'notification', `New notification: ${data.title}`, undefined);
     return this.toNotificationResponse(notification);
   }
