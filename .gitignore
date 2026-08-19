@@ -29,3 +29,5 @@ yarn-error.log*
 
 # Test artifacts
 test/global-setup-result.json
+test-results/
+test/.global-env.json

@@ -12,6 +12,19 @@
   "setupFiles": ["<rootDir>/load-env.ts"],
   "globalSetup": "<rootDir>/global-setup.ts",
   "globalTeardown": "<rootDir>/global-teardown.ts",
+  "reporters": [
+    "default",
+    [
+      "jest-junit",
+      {
+        "suiteName": "XKILL Backend E2E",
+        "outputDirectory": "test-results",
+        "outputName": "jest-junit.xml",
+        "classNameTemplate": "{classname}",
+        "titleTemplate": "{title}"
+      }
+    ]
+  ],
   "testTimeout": 180000,
   "maxWorkers": 1,
   "verbose": true

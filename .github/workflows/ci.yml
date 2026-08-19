@@ -5,6 +5,10 @@ on:
     branches: [main]
   pull_request:
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint:
     name: Lint
@@ -40,15 +44,40 @@ jobs:
   e2e:
     name: E2E (Testcontainers)
     runs-on: ubuntu-latest
+    timeout-minutes: 90
+    needs: [lint]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+      - name: Enable Docker BuildKit
+        run: echo "DOCKER_BUILDKIT=1" >> "$GITHUB_ENV"
+      - name: Verify Docker daemon (required by Testcontainers)
+        run: docker info > /dev/null
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/node-prisma-engines
+          key: ${{ runner.os }}-prisma-engines-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-prisma-engines-
+      - name: Pre-pull Testcontainers images
+        run: |
+          docker pull postgres:16-alpine
+          docker pull redis:7-alpine
       - run: npm ci
       - run: npx prisma generate
-      - run: npm run test:e2e
+      - name: Run e2e tests
+        run: npm run test:e2e
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-results
+          path: test-results
+          if-no-files-found: warn
+          retention-days: 7
 
   build:
     name: Build
